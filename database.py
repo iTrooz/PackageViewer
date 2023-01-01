@@ -18,8 +18,6 @@ class Package(Base):
     arch = Column(String(255), nullable=False)
     others = Column(JSON)
 
-    files = relationship('PackageFile', backref='package')
-
     def add_other(self, key, value):
         if not self.others:
             self.others = {}
@@ -36,7 +34,7 @@ class PackageFile(Base):
 
     id = Column(Integer, primary_key=True)
     filepath = Column(String(255), nullable=False)
-    package_id = Column(Integer, ForeignKey('package.id'))
+    package_name = Column(String(255))
 
 def reset_db():
     db_engine = create_engine('mariadb+pymysql://root:azerty123@localhost:3306/packageviewer',

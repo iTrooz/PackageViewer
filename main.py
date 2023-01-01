@@ -28,13 +28,11 @@ async def fill_db():
         else:
             print(f"Found invalid directory : {dir}")
 
-    all_packages = await asyncio.gather(*tasks)
-
-    print(all_packages[0][0])
-    print(all_packages[0][1])
-
-    # for distro_packages in all_packages:
-    #     session.add_all(distro_packages)
+    all_results = await asyncio.gather(*tasks)
+    
+    for distro_packages, distro_package_files in all_results:
+        session.add_all(distro_packages)
+        session.add_all(distro_package_files)
     
     session.commit()
 

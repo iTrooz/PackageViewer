@@ -75,7 +75,7 @@ class AptParser:
     async def _parse_files_file(self, filepath, repo_packages):
         file = gzip.open(filepath, "rb")
 
-        current_package = None
+        packagefiles = []
 
         for line in tqdm(file.read().decode().split("\n")):
             # EOF
@@ -84,37 +84,14 @@ class AptParser:
 
             split_line = line.replace("\t", "").split(" ")
             package_file, package_loc = split_line[0], split_line[-1]
+            package_name = package_loc.split("/")[-1]
 
-            split_loc = package_loc.split("/")
-
-            # optimisation : check if the package is the same as last time because searching it again
-            if current_package == None or split_loc[-1] != current_package.name:
-                # search new package
-                current_package = None
-                subrepo = None
-
-                # optimisation : sometimes the location tells us the subrepo
-                if len(split_loc)==3:
-                    subrepo = split_loc[0]
-                
-                for subrepo_i, subrepo_packages in repo_packages.items():
-                    if subrepo == None or subrepo == subrepo_i:
-                        for package in subrepo_packages:
-                            if package.name == split_loc[-1]:
-                                current_package = package
-                                break
-                    
-                    if current_package != None:
-                        break
-                
-                if current_package == None:
-                    print(f"Package {split_loc[-1]} found nowhere (Optimisation:{len(split_loc)==3})", file=sys.stderr)
-                    # raise RuntimeError(f"Package {split_loc[-1]} found nowhere")
-                
-                
-            package.files.append(database.PackageFile(filepath=package_file))
+            # a = database.PackageFile(package_name=package_name, filepath=package_file)
+            # packagefiles.append()
 
         file.close()
+
+        return packagefiles
 
     async def parse_async(self, dir):
 
@@ -127,7 +104,7 @@ class AptParser:
 
         print(f"Starting to parse all summaries for {dir}")
         start = time()
-        await self.parse_files(dir, visited_dirs, packages)
+        package_files = await self.parse_files(dir, visited_dirs, packages)
         end = time()
         print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
         
@@ -135,9 +112,13 @@ class AptParser:
         packages_flat = []
         for repo_packages in packages.values():
             for subrepo_packages in repo_packages.values():
-                packages_flat = packages_flat + subrepo_packages # should already be resolved
+                packages_flat = packages_flat + subrepo_packages
         
-        return packages_flat
+        packages_files_flat = []
+        for sub_package_files in package_files:
+            packages_files_flat = packages_files_flat + sub_package_files
+        
+        return packages_flat, packages_files_flat
 
     async def parse_sums(self, dir):
         # get summaries
@@ -176,4 +157,4 @@ class AptParser:
                 self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz"), repo_packages)
             )
 
-        await asyncio.gather(*tasks)
+        return await asyncio.gather(*tasks)
