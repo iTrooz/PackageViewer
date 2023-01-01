@@ -78,17 +78,17 @@ class AptParser:
         return rows
 
     def __parse_files_file_timer(func):
-        async def wrap_func(self, filepath):
+        def wrap_func(self, filepath):
             print(f'Starting parsing files for {filepath}')
             start = time()
-            result = await func(self, filepath)
+            result = func(self, filepath)
             end = time()
             print(f'Finished parsing files for {filepath} ({(end-start):.4f}s)')
             return result
         return wrap_func
 
     @__parse_files_file_timer
-    async def _parse_files_file(self, filepath):
+    def _parse_files_file(self, filepath):
         file = gzip.open(filepath, "rb")
 
         filepaths = []
@@ -104,11 +104,9 @@ class AptParser:
             package_file, package_loc = split_line[0], split_line[-1]
             package_name = package_loc.split("/")[-1]
 
-            filepaths.append({"package_name": package_name, "filepath": package_file})
+            yield {"package_name": package_name, "filepath": package_file}
 
         file.close()
-
-        return filepaths
 
     async def parse_async(self, dir):
 
@@ -122,11 +120,11 @@ class AptParser:
 
         input()
         
-        print(f"Starting to parse all summaries for {dir}")
+        print(f"Starting to parse all files for {dir}")
         start = time()
         await self.parse_files(dir)
         end = time()
-        print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
+        print(f"Finished parsing all files for {dir} ({(end-start):.4f}s)")
 
         input()
         
@@ -150,15 +148,11 @@ class AptParser:
     async def parse_files(self, dir):
         tasks = []
 
-        for subdir in os.listdir(dir):
+        for subdir in tqdm(list(os.listdir(dir))):
             
             distro_codename, repo = (*subdir.split("-"),"")[0:2]
 
-            tasks.append(
-                self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz"))
-            )
-
-        print("Inserting files mapping..")
-        for filepaths in tqdm(await asyncio.gather(*tasks)):
-            self.db_session.bulk_insert_mappings(database.PackageFile, filepaths)
-        print("Inserted files mapping!")
+            input()
+            print(f"Inserting files for {subdir}..")
+            self.db_session.bulk_insert_mappings(database.PackageFile, self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz")))
+            print(f"Inserted files for {subdir}!")

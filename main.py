@@ -38,4 +38,4 @@ async def test():
     parser = AptParser(db_session, "ubuntu", "22")
     await parser._parse_files_file("archives/ubuntu-22/jammy/Contents-amd64.gz")
 
-asyncio.run(test())
+asyncio.run(fill_db())
