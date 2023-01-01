@@ -17,7 +17,7 @@ database.reset_db()
 db_session = database.get_session()
 
 async def fill_db():
-    tasks = []
+    
     for dir in os.listdir("archives"):
         splitDir = dir.split("-")
         if len(splitDir) == 2:
@@ -25,12 +25,10 @@ async def fill_db():
             ParserClass = distros[distro_name]
             parserInst = ParserClass(db_session, distro_name, distro_version)
             
-            tasks.append(parserInst.parse_async("archives/"+dir))
+            parserInst.parse_sums("archives/"+dir)
         else:
             print(f"Found invalid directory : {dir}")
 
-    await asyncio.gather(*tasks)
-    
     db_session.commit()
 
 

@@ -1,5 +1,4 @@
 import os
-import asyncio
 import gzip
 from time import time
 import sys
@@ -25,17 +24,17 @@ class AptParser:
         )
 
     def __parse_sum_file_timer(func):
-        async def wrap_func(self, filepath, distro_repo):
+        def wrap_func(self, filepath, distro_repo):
             print(f'Starting parsing summary for {filepath}')
             start = time()
-            result = await func(self, filepath, distro_repo)
+            result = func(self, filepath, distro_repo)
             end = time()
             print(f'Finished parsing summary for {filepath} ({(end-start):.4f}s)')
             return result
         return wrap_func
 
     @__parse_sum_file_timer
-    async def _parse_sum_file(self, filepath, distro_repo):
+    def _parse_sum_file(self, filepath, distro_repo):
         def gen_row():
             return {
                 "distro_name":self.distro_name,
@@ -49,10 +48,9 @@ class AptParser:
 
         file = gzip.open(filepath, "rb")
         for line in tqdm(file):
-            line = line.decode()
+            line = line.decode().strip()
 
             if line == "":
-
                 if "name" in row:
                     rows.append(row)
 
@@ -108,7 +106,7 @@ class AptParser:
 
         file.close()
 
-    async def parse_async(self, dir):
+    def parse_all(self, dir):
 
         # input()
         # 
@@ -118,41 +116,46 @@ class AptParser:
         # end = time()
         # print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
 
-        input()
+        input("Parse all files. Key")
         
         print(f"Starting to parse all files for {dir}")
         start = time()
-        await self.parse_files(dir)
+        self.parse_files(dir)
         end = time()
         print(f"Finished parsing all files for {dir} ({(end-start):.4f}s)")
 
-        input()
+        input("Finished parsing all files. Key")
         
-    async def parse_sums(self, dir):
+    def parse_sums(self, dir):
         # get summaries
         tasks = []
 
-        for subdir in os.listdir(dir):
+        for subdir in tqdm(list(os.listdir(dir))):
             distro_codename, repo = (*subdir.split("-"),"")[0:2]
 
             for subrepo in ("main", "universe", "restricted", "multiverse"):
 
-                tasks.append(self._parse_sum_file(os.path.join(dir, subdir, subrepo, "Packages.gz"), repo+"-"+subrepo))
+                print("Inserting sums mapping..")
+                database.bulk_insert_chunked(
+                    self.db_session,
+                    database.Package,
+                    self._parse_sum_file(os.path.join(dir, subdir, subrepo, "Packages.gz"), repo+"-"+subrepo)
+                )
+                print("Inserted sums mapping!")
 
 
-        print("Inserting sums mapping..")
-        for rows in tqdm(await asyncio.gather(*tasks)):
-            self.db_session.bulk_insert_mappings(database.Package, rows)
-        print("Inserted sums mapping!")
 
-    async def parse_files(self, dir):
+    def parse_files(self, dir):
         tasks = []
 
         for subdir in tqdm(list(os.listdir(dir))):
             
             distro_codename, repo = (*subdir.split("-"),"")[0:2]
 
-            input()
+            input(f"Insert files for {subdir}. Key")
             print(f"Inserting files for {subdir}..")
-            self.db_session.bulk_insert_mappings(database.PackageFile, self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz")))
-            print(f"Inserted files for {subdir}!")
+            database.bulk_insert_chunked(
+                self.db_session,
+                database.PackageFile,
+                self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz"))
+            )

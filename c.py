@@ -12,6 +12,8 @@ inserts = [{"package_name": "A", "filepath": "B"} for i in tqdm(range(10**6))]
 end = time()
 print(f"Created inserts! {(end-start):.4f}s")
 
+input()
+
 print("Inserting..")
 start = time()
 db_conn.execute(
@@ -19,6 +21,8 @@ db_conn.execute(
 )
 end = time()
 print(f"Inserted! {(end-start):.4f}s")
+
+input()
 
 print("Committing..")
 start = time()
