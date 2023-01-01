@@ -13,7 +13,8 @@ distros = {
     "archlinux": PacmanParser,
 }
 
-db_engine, session = database.reset_db()
+database.reset_db()
+db_session = database.get_session()
 
 async def fill_db():
     tasks = []
@@ -22,18 +23,19 @@ async def fill_db():
         if len(splitDir) == 2:
             distro_name, distro_version = splitDir
             ParserClass = distros[distro_name]
-            parserInst = ParserClass(db_engine, distro_name, distro_version)
+            parserInst = ParserClass(db_session, distro_name, distro_version)
             
             tasks.append(parserInst.parse_async("archives/"+dir))
         else:
             print(f"Found invalid directory : {dir}")
 
-    all_results = await asyncio.gather(*tasks)
+    await asyncio.gather(*tasks)
     
-    for distro_packages, distro_package_files in all_results:
-        session.add_all(distro_packages)
-        session.add_all(distro_package_files)
-    
-    session.commit()
+    db_session.commit()
 
-asyncio.run(fill_db())
+
+async def test():
+    parser = AptParser(db_session, "ubuntu", "22")
+    await parser._parse_files_file("archives/ubuntu-22/jammy/Contents-amd64.gz")
+
+asyncio.run(test())

@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import Session
 
 Base = declarative_base()
 
@@ -33,16 +33,19 @@ class PackageFile(Base):
     __tablename__ = 'package_file'
 
     id = Column(Integer, primary_key=True)
-    filepath = Column(String(255), nullable=False)
+    filepath = Column(String(4096), nullable=False)
     package_name = Column(String(255))
 
+db_engine = create_engine('mariadb+pymysql://root:azerty123@localhost:3306/packageviewer', echo=False, future=True)
+
 def reset_db():
-    db_engine = create_engine('mariadb+pymysql://root:azerty123@localhost:3306/packageviewer',
-            echo=True)
     Base.metadata.drop_all(bind=db_engine)
     Base.metadata.create_all(bind=db_engine)
 
-    Session = sessionmaker(bind=db_engine)
+def get_session():
+    return Session(bind=db_engine)
 
-    return db_engine, Session()
+
+def get_conn():
+    return db_engine.connect().execution_options(autocommit=False)
 

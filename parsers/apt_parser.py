@@ -4,14 +4,15 @@ import gzip
 from time import time
 import sys
 
+from sqlalchemy import insert
 from tqdm import tqdm
 
 import database
 
 class AptParser:
 
-    def __init__(self, db, distro_name, distro_version) -> None:
-        self.db = db
+    def __init__(self, db_session, distro_name, distro_version) -> None:
+        self.db_session = db_session
         self.distro_name = distro_name
         self.distro_version = distro_version
 
@@ -35,15 +36,27 @@ class AptParser:
 
     @__parse_sum_file_timer
     async def _parse_sum_file(self, filepath, distro_repo):
-        package = self.__gen_package(distro_repo)
-        packages = []
+        def gen_row():
+            return {
+                "distro_name":self.distro_name,
+                "distro_version":self.distro_version,
+                "distro_repo":distro_repo,
+                "others":{},
+            }
+
+        row = gen_row()
+        rows = []
 
         file = gzip.open(filepath, "rb")
-        for line in file.read().decode().split("\n"):
+        for line in tqdm(file):
+            line = line.decode()
+
             if line == "":
-                if package.name:
-                    packages.append(package)
-                package = self.__gen_package(distro_repo)
+
+                if "name" in row:
+                    rows.append(row)
+
+                row = gen_row()
                 continue
 
             index = line.find(":")
@@ -52,32 +65,37 @@ class AptParser:
             
             match key:
                 case "Package":
-                    package.name = value
+                    row["name"] = value
                 case "Architecture":
-                    package.arch = value
+                    row["arch"] = value
                 case "Version":
-                    package.version = value
+                    row["version"] = value
                 case _:
-                    package.add_other(key, value)
-        return packages
+                    row["others"][key] = value
+
+        file.close()
+
+        return rows
 
     def __parse_files_file_timer(func):
-        async def wrap_func(self, filepath, repo_packages):
+        async def wrap_func(self, filepath):
             print(f'Starting parsing files for {filepath}')
             start = time()
-            result = await func(self, filepath, repo_packages)
+            result = await func(self, filepath)
             end = time()
             print(f'Finished parsing files for {filepath} ({(end-start):.4f}s)')
             return result
         return wrap_func
 
     @__parse_files_file_timer
-    async def _parse_files_file(self, filepath, repo_packages):
+    async def _parse_files_file(self, filepath):
         file = gzip.open(filepath, "rb")
 
-        packagefiles = []
+        filepaths = []
 
-        for line in tqdm(file.read().decode().split("\n")):
+        for line in tqdm(file):
+            line = line.decode()
+
             # EOF
             if line == "":
                 break
@@ -86,75 +104,61 @@ class AptParser:
             package_file, package_loc = split_line[0], split_line[-1]
             package_name = package_loc.split("/")[-1]
 
-            # a = database.PackageFile(package_name=package_name, filepath=package_file)
-            # packagefiles.append()
+            filepaths.append({"package_name": package_name, "filepath": package_file})
 
         file.close()
 
-        return packagefiles
+        return filepaths
 
     async def parse_async(self, dir):
 
+        # input()
+        # 
+        # print(f"Starting to parse all summaries for {dir}")
+        # start = time()
+        # await self.parse_sums(dir)
+        # end = time()
+        # print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
+
+        input()
+        
         print(f"Starting to parse all summaries for {dir}")
         start = time()
-        visited_dirs, packages = await self.parse_sums(dir)
+        await self.parse_files(dir)
         end = time()
         print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
-        
 
-        print(f"Starting to parse all summaries for {dir}")
-        start = time()
-        package_files = await self.parse_files(dir, visited_dirs, packages)
-        end = time()
-        print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
+        input()
         
-
-        packages_flat = []
-        for repo_packages in packages.values():
-            for subrepo_packages in repo_packages.values():
-                packages_flat = packages_flat + subrepo_packages
-        
-        packages_files_flat = []
-        for sub_package_files in package_files:
-            packages_files_flat = packages_files_flat + sub_package_files
-        
-        return packages_flat, packages_files_flat
-
     async def parse_sums(self, dir):
         # get summaries
-        packages = {}
-        tasks = {}
-        visited_dirs = []
+        tasks = []
 
         for subdir in os.listdir(dir):
             distro_codename, repo = (*subdir.split("-"),"")[0:2]
 
-            visited_dirs.append(subdir)
-
             for subrepo in ("main", "universe", "restricted", "multiverse"):
 
-                task = self._parse_sum_file(os.path.join(dir, subdir, subrepo, "Packages.gz"), repo+"-"+subrepo)
-                tasks[(repo, subrepo)] = task
+                tasks.append(self._parse_sum_file(os.path.join(dir, subdir, subrepo, "Packages.gz"), repo+"-"+subrepo))
 
 
-        # await all
-        for key, value in zip(tasks.keys(), await asyncio.gather(*tasks.values())):
-            if not key[0] in packages:
-                packages[key[0]] = {}
-            packages[key[0]][key[1]] = value
+        print("Inserting sums mapping..")
+        for rows in tqdm(await asyncio.gather(*tasks)):
+            self.db_session.bulk_insert_mappings(database.Package, rows)
+        print("Inserted sums mapping!")
 
-
-        return visited_dirs, packages
-
-    async def parse_files(self, dir, visited_dirs, packages):
+    async def parse_files(self, dir):
         tasks = []
 
-        for subdir, repo_packages in zip(visited_dirs, packages.values()):
+        for subdir in os.listdir(dir):
             
             distro_codename, repo = (*subdir.split("-"),"")[0:2]
 
             tasks.append(
-                self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz"), repo_packages)
+                self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz"))
             )
 
-        return await asyncio.gather(*tasks)
+        print("Inserting files mapping..")
+        for filepaths in tqdm(await asyncio.gather(*tasks)):
+            self.db_session.bulk_insert_mappings(database.PackageFile, filepaths)
+        print("Inserted files mapping!")
