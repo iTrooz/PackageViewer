@@ -1,6 +1,10 @@
 from sqlalchemy import create_engine, Column, Integer, String, ForeignKey, JSON
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import Session
+
+from time import time
+import itertools
+from tqdm import tqdm
 
 Base = declarative_base()
 
@@ -33,16 +37,34 @@ class PackageFile(Base):
     __tablename__ = 'package_file'
 
     id = Column(Integer, primary_key=True)
-    filepath = Column(String(255), nullable=False)
+    filepath = Column(String(4096), nullable=False)
     package_name = Column(String(255))
 
+db_engine = create_engine('mariadb+pymysql://root:azerty123@localhost:3306/packageviewer', echo=False, future=True)
+
 def reset_db():
-    db_engine = create_engine('mariadb+pymysql://root:azerty123@localhost:3306/packageviewer',
-            echo=True)
     Base.metadata.drop_all(bind=db_engine)
     Base.metadata.create_all(bind=db_engine)
 
-    Session = sessionmaker(bind=db_engine)
+def get_session():
+    return Session(bind=db_engine)
 
-    return db_engine, Session()
 
+def get_conn():
+    return db_engine.connect().execution_options(autocommit=False)
+
+def bulk_insert_chunked(db_session, table, inserts):
+    print("Inserting..")
+    start = time()
+    __bulk_insert_chunked(db_session, table, inserts)
+    end = time()
+    print(f"Inserted ! ({(end-start):.4f}s)")
+
+def __bulk_insert_chunked(db_session, table, inserts):
+    CHUNK_SIZE=10**6
+    while True:
+        print("Inserting new chunk..")
+        slice = list(itertools.islice(inserts, CHUNK_SIZE))
+        if len(slice) == 0:
+            break
+        db_session.bulk_insert_mappings(table, slice)
