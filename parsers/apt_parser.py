@@ -44,7 +44,6 @@ class AptParser:
             }
 
         row = gen_row()
-        rows = []
 
         file = gzip.open(filepath, "rb")
         for line in tqdm(file):
@@ -52,7 +51,7 @@ class AptParser:
 
             if line == "":
                 if "name" in row:
-                    rows.append(row)
+                    yield row
 
                 row = gen_row()
                 continue
@@ -72,8 +71,6 @@ class AptParser:
                     row["others"][key] = value
 
         file.close()
-
-        return rows
 
     def __parse_files_file_timer(func):
         def wrap_func(self, filepath):
@@ -108,24 +105,18 @@ class AptParser:
 
     def parse_all(self, dir):
 
-        # input()
-        # 
-        # print(f"Starting to parse all summaries for {dir}")
-        # start = time()
-        # await self.parse_sums(dir)
-        # end = time()
-        # print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
+        print(f"Starting to parse all summaries for {dir}")
+        start = time()
+        self.parse_sums(dir)
+        end = time()
+        print(f"Finished parsing all summaries for {dir} ({(end-start):.4f}s)")
 
-        input("Parse all files. Key")
-        
         print(f"Starting to parse all files for {dir}")
         start = time()
         self.parse_files(dir)
         end = time()
         print(f"Finished parsing all files for {dir} ({(end-start):.4f}s)")
 
-        input("Finished parsing all files. Key")
-        
     def parse_sums(self, dir):
         # get summaries
         tasks = []
@@ -152,7 +143,6 @@ class AptParser:
             
             distro_codename, repo = (*subdir.split("-"),"")[0:2]
 
-            input(f"Insert files for {subdir}. Key")
             print(f"Inserting files for {subdir}..")
             database.bulk_insert_chunked(
                 self.db_session,

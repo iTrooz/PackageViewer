@@ -13,7 +13,7 @@ distros = {
     "archlinux": PacmanParser,
 }
 
-database.reset_db()
+# database.reset_db()
 db_session = database.get_session()
 
 async def fill_db():
@@ -25,7 +25,12 @@ async def fill_db():
             ParserClass = distros[distro_name]
             parserInst = ParserClass(db_session, distro_name, distro_version)
             
-            parserInst.parse_sums("archives/"+dir)
+            # db_session.execute(f"TRUNCATE TABLE {database.PackageFile.__tablename__}")
+            parserInst.parse_files("archives/"+dir)
+            
+            # db_session.execute(f"TRUNCATE TABLE {database.Package.__tablename__}")
+            # parserInst.parse_sums("archives/"+dir)
+
         else:
             print(f"Found invalid directory : {dir}")
 

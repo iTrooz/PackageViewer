@@ -65,7 +65,6 @@ def __bulk_insert_chunked(db_session, table, inserts):
     while True:
         print("Inserting new chunk..")
         slice = list(itertools.islice(inserts, CHUNK_SIZE))
-        print(type(inserts))
         if len(slice) == 0:
             break
         db_session.bulk_insert_mappings(table, slice)
