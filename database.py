@@ -37,6 +37,7 @@ class PackageFile(Base):
 
     id = Column(Integer, primary_key=True)
     filepath = Column(String(4096), nullable=False)
+    filename = Column(String(255), nullable=False)
     package = Column(String(255), nullable=False)
 
 db_engine = create_engine('mariadb+pymysql://root:azerty123@localhost:3306/packageviewer', echo=False, future=True)

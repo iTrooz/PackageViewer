@@ -94,7 +94,7 @@ class AptParser:
             package_file, package_loc = split_line[0], split_line[-1].strip()
             package_name = package_loc.split("/")[-1]
 
-            yield {"package": package_name, "filepath": package_file}
+            yield {"package": package_name, "filepath": package_file, "filename": package_file.split("/")[-1]}
 
         file.close()
 
