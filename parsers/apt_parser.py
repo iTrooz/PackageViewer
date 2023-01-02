@@ -10,36 +10,31 @@ import database
 
 class AptParser:
 
-    def __init__(self, db_session, distro_name, distro_version) -> None:
+    def __init__(self, db_session, distro_name, distro_version, distro_repo, archives_dir) -> None:
         self.db_session = db_session
         self.distro_name = distro_name
         self.distro_version = distro_version
+        self.distro_repo = distro_repo
+        self.repo_path = os.path.join(archives_dir, distro_name, distro_version, distro_repo)
 
     
-    def __gen_package(self, distro_repo):
-        return database.Package(
-            distro_name=self.distro_name,
-            distro_version=self.distro_version,
-            distro_repo=distro_repo,
-        )
-
-    def __parse_sum_file_timer(func):
-        def wrap_func(self, filepath, distro_repo):
+    def __parse_sum_file_timer__(func):
+        def wrap_func(self, filepath, subrepo):
             print(f'Starting parsing summary for {filepath}')
             start = time()
-            result = func(self, filepath, distro_repo)
+            result = func(self, filepath, subrepo)
             end = time()
             print(f'Finished parsing summary for {filepath} ({(end-start):.4f}s)')
             return result
         return wrap_func
 
-    @__parse_sum_file_timer
-    def _parse_sum_file(self, filepath, distro_repo):
+    @__parse_sum_file_timer__
+    def _parse_sum_file_(self, filepath, subrepo):
         def gen_row():
             return {
                 "distro_name":self.distro_name,
                 "distro_version":self.distro_version,
-                "distro_repo":distro_repo,
+                "distro_repo":self.distro_repo+"/"+subrepo,
                 "others":{},
             }
 
@@ -72,7 +67,7 @@ class AptParser:
 
         file.close()
 
-    def __parse_files_file_timer(func):
+    def _parse_files_filetimer__(func):
         def wrap_func(self, filepath):
             print(f'Starting parsing files for {filepath}')
             start = time()
@@ -82,8 +77,8 @@ class AptParser:
             return result
         return wrap_func
 
-    @__parse_files_file_timer
-    def _parse_files_file(self, filepath):
+    @_parse_files_filetimer__
+    def _parse_files_file_(self, filepath):
         file = gzip.open(filepath, "rb")
 
         filepaths = []
@@ -99,7 +94,7 @@ class AptParser:
             package_file, package_loc = split_line[0], split_line[-1].strip()
             package_name = package_loc.split("/")[-1]
 
-            yield {"package_name": package_name, "filepath": package_file}
+            yield {"package": package_name, "filepath": package_file}
 
         file.close()
 
@@ -117,35 +112,24 @@ class AptParser:
         end = time()
         print(f"Finished parsing all files for {dir} ({(end-start):.4f}s)")
 
-    def parse_sums(self, dir):
-        # get summaries
-        tasks = []
+    def parse_sums(self):
 
-        for subdir in tqdm(list(os.listdir(dir))):
-            distro_codename, repo = (*subdir.split("-"),"")[0:2]
-
-            for subrepo in ("main", "universe", "restricted", "multiverse"):
-
-                print("Inserting sums mapping..")
+        for subrepo in os.listdir(self.repo_path):
+            if os.path.isdir(os.path.join(self.repo_path, subrepo)):
+                print(f"Inserting sums mapping for {subrepo}..")
                 database.bulk_insert_chunked(
                     self.db_session,
                     database.Package,
-                    self._parse_sum_file(os.path.join(dir, subdir, subrepo, "Packages.gz"), repo+"-"+subrepo)
+                    self._parse_sum_file_(os.path.join(self.repo_path, subrepo, "Packages.gz"), subrepo)
                 )
-                print("Inserted sums mapping!")
+                print(f"Inserted sums mapping for {subrepo}!")
 
 
 
-    def parse_files(self, dir):
-        tasks = []
-
-        for subdir in tqdm(list(os.listdir(dir))):
-            
-            distro_codename, repo = (*subdir.split("-"),"")[0:2]
-
-            print(f"Inserting files for {subdir}..")
-            database.bulk_insert_chunked(
-                self.db_session,
-                database.PackageFile,
-                self._parse_files_file(os.path.join(dir, subdir, "Contents-amd64.gz"))
-            )
+    def parse_files(self):
+        print(f"Inserting files for {self.repo_path}..")
+        database.bulk_insert_chunked(
+            self.db_session,
+            database.PackageFile,
+            self._parse_files_file_(os.path.join(self.repo_path, "Contents-amd64.gz"))
+        )
