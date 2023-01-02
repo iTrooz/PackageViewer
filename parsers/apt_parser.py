@@ -95,8 +95,8 @@ class AptParser:
             if line == "":
                 break
 
-            split_line = line.replace("\t", "").split(" ")
-            package_file, package_loc = split_line[0], split_line[-1]
+            split_line = line.split("\t")
+            package_file, package_loc = split_line[0], split_line[-1].strip()
             package_name = package_loc.split("/")[-1]
 
             yield {"package_name": package_name, "filepath": package_file}
