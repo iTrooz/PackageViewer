@@ -1,5 +1,6 @@
 import argparse
 import sys
+import traceback
 
 from data_manager import DataManager
 import database
@@ -69,6 +70,13 @@ else:
 
     print(f"Operation requested : add content '{args.content}' from repository '{args.distro}/{args.version}/{args.repo}'")
 
-    data_manager.add_data(args.distro, args.version, args.repo, args.content)
-
-    # data_manager.commit()
+    try:
+        data_manager.add_data(args.distro, args.version, args.repo, args.content)
+        data_manager.commit()
+    except BaseException as e:
+        traceback.print_exception(e)
+        print(f"Hey! We detected an error of type {e.__class__.__name__}. Do you want to commit the currently inserted rows ?")
+        print("Use the above logs to guess what will be committed")
+        
+        if input("[y/N]") in ('y', 'yes'):
+            data_manager.commit()
