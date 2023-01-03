@@ -1,3 +1,5 @@
+import os
+
 import database
 
 from parsers.apt_parser import AptParser
@@ -47,7 +49,24 @@ class DataManager:
 
             # do not use TRUNCATE or ALTER TABLE AUTO_INCREMENT because they are DDL operations that will auto-commit
             # we can't either reset the increment at commit time because we will already have the new ids
-            
+
+    def add_data(self, distro_name, distro_version, distro_repo, content):
+
+        def value_or_loop_dir(value, *dir):
+            if value:
+                yield value
+            else:
+                path = os.path.join(self.ARCHIVES_DIR, *dir)
+                for subdir in os.listdir(path):
+                    if os.path.isdir(os.path.join(path, subdir)):
+                        yield subdir
+                
+        for distro_name_loop in value_or_loop_dir(distro_name):
+            for distro_version_loop in value_or_loop_dir(distro_version, distro_name_loop):
+                for distro_repo_loop in value_or_loop_dir(distro_repo, distro_name_loop, distro_version_loop):
+                    self.add_data_from_repo(distro_name_loop, distro_version_loop, distro_repo_loop, content or "all")
+
+
     def add_data_from_repo(self, distro_name, distro_version, distro_repo, content):
         ParserClass = self.__get_parser_class__(distro_name)
         print(f"Using parser class '{ParserClass.__name__}'")
