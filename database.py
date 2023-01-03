@@ -36,7 +36,7 @@ class PackageFile(Base):
     __tablename__ = 'package_file'
 
     id = Column(Integer, primary_key=True)
-    dirpath = Column(String(4096), nullable=False)
+    dirname = Column(String(4096), nullable=False)
     filename = Column(String(4096), nullable=False)
     package = Column(String(255), nullable=False)
 

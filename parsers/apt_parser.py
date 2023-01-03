@@ -95,9 +95,9 @@ class AptParser:
 
             package_name = package_loc.split("/")[-1]
             filepath_split = filepath.split(" ")
-            dirpath, filename = filepath_split[:-1], filepath_split[-1]
+            dirname, filename = os.path.dirname(filepath), os.path.basename(filepath_split[-1])
 
-            yield {"package": package_name, "dirpath": dirpath, "filename": filename}
+            yield {"package": package_name, "dirname": dirname, "filename": filename}
 
         file.close()
 
