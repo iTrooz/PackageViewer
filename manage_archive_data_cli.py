@@ -49,8 +49,8 @@ parser.add_argument("-r", "--repo", required=False,
     help = "Set the distribution repository. Separate sub-repositories with '/'. Starting with '/' means using the default repository, if there is one")
 content_arg.required = False
 
-parser.add_argument("-l", "--large", required=False, action="store_true",
-    help = "Set the distribution repository. Separate sub-repositories with '/'. Starting with '/' means using the default repository, if there is one")
+parser.add_argument("-a", "--add-multiple", required=False, action="store_true",
+    help = "Confirm you will insert from multiple data sources (if you do not use all flags -d -v and -r)")
 parser.add_argument("--file", required=False,
     help = "Manually set the file path instead of deriving it from other flags. The file content will be assumed from the other flags")
 
@@ -59,7 +59,7 @@ args, _ = parser.parse_known_args()
 if args.file:
     raise NotImplementedError("--file")
 else:
-    if not all((args.distro, args.version, args.repo, args.content)) and not args.large:
+    if not all((args.distro, args.version, args.repo, args.content)) and not args.add_multiple:
         print("not all flags (distro, version, repo and content) have been specified, large amount of data could be inserted. please use option -l/--large to confirm")
         exit(1)
 
