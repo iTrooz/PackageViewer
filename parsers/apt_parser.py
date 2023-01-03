@@ -41,7 +41,7 @@ class AptParser:
         row = gen_row()
 
         file = gzip.open(filepath, "rb")
-        for line in tqdm(file):
+        for line in file:
             line = line.decode().strip()
 
             if line == "":
