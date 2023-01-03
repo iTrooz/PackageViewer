@@ -91,10 +91,13 @@ class AptParser:
                 break
 
             split_line = line.split("\t")
-            package_file, package_loc = split_line[0].strip(), split_line[-1].strip()
-            package_name = package_loc.split("/")[-1]
+            filepath, package_loc = split_line[0].strip(), split_line[-1].strip()
 
-            yield {"package": package_name, "filepath": package_file, "filename": package_file.split("/")[-1]}
+            package_name = package_loc.split("/")[-1]
+            filepath_split = filepath.split(" ")
+            dirpath, filename = filepath_split[:-1], filepath_split[-1]
+
+            yield {"package": package_name, "dirpath": dirpath, "filename": filename}
 
         file.close()
 
