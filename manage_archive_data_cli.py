@@ -54,7 +54,7 @@ parser.add_argument("-a", "--add-multiple", required=False, action="store_true",
 parser.add_argument("--file", required=False,
     help = "Manually set the file path instead of deriving it from other flags. The file content will be assumed from the other flags")
 
-args, _ = parser.parse_known_args()
+args = parser.parse_args()
 
 if args.file:
     raise NotImplementedError("--file")
