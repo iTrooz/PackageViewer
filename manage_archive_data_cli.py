@@ -78,5 +78,10 @@ else:
         print(f"Hey! We detected an error of type {e.__class__.__name__}. Do you want to commit the currently inserted rows ?")
         print("Use the above logs to guess what will be committed")
         
-        if input("[y/N]") in ('y', 'yes'):
-            data_manager.commit()
+        while True:
+            answer = input("[y/N]")
+            if answer:
+                if answer in ('y', 'yes'):
+                    data_manager.commit()
+                break
+            print("Please type something")
