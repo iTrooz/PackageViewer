@@ -20,7 +20,7 @@ parser.add_argument("--clear-db", required=False, action="store_true",
     help = "Clears all of tables of the database before inserting")
 parser.add_argument("--clear-table", required=False, action="store_true",
     help = "Clear the target table (assumed from --content) before inserting")
-content_arg = parser.add_argument("-c", "--content", required=False, choices=("sums","files","all"),
+content_arg = parser.add_argument("-c", "--content", required=False, default='all', choices=("sums","files","all"),
     help = "What to add to the database. Accepted values : sums|files|all")
 
 args, unknown_args = parser.parse_known_args()
@@ -33,10 +33,6 @@ if args.clear_db:
     data_manager.clear_tables(content="all")
     print("Cleared database!")
 if args.clear_table:
-    if not args.content:
-        print("Use -c/--content to specify a table")
-        sys.exit(1)
-
     data_manager.clear_tables(content=args.content)
 
 if len(unknown_args) == 0:
