@@ -6,13 +6,17 @@ from parsers.apt_parser import AptParser
 from parsers.dnf_parser import DnfParser
 from parsers.pacman_parser import PacmanParser
 
+from data_outputs.csv_output import CSVOutput
+
+from distro_data import DistroData
+
 
 class DataManager:
 
     def __init__(self):
         self.ARCHIVES_DIR = "archives"
-        self.db_session = database.get_session()
-
+        self.TMP_DIR = "/tmp"
+        
     def __get_parser_class__(self, distro_name):
         match distro_name:
             case "debian": return AptParser
@@ -25,7 +29,7 @@ class DataManager:
         if magic_value == "Yes I am sure":
             print("Re-creating the database from the ORM model..")
             database.recreate_db()
-            print("Re-recrated the database !")
+            print("Re-created the database !")
         else:
             print("Invalid magic value, not re-creating database")
             exit(1)
@@ -50,7 +54,7 @@ class DataManager:
             # do not use TRUNCATE or ALTER TABLE AUTO_INCREMENT because they are DDL operations that will auto-commit
             # we can't either reset the increment at commit time because we will already have the new ids
 
-    def add_data(self, distro_name, distro_version, distro_repo, content):
+    def parse_multiple_data(self, distro_data: DistroData, create_output):
 
         def value_or_loop_dir(value, *dir):
             if value:
@@ -61,28 +65,37 @@ class DataManager:
                     if os.path.isdir(os.path.join(path, subdir)):
                         yield subdir
                 
-        for distro_name_loop in value_or_loop_dir(distro_name):
-            for distro_version_loop in value_or_loop_dir(distro_version, distro_name_loop):
-                for distro_repo_loop in value_or_loop_dir(distro_repo, distro_name_loop, distro_version_loop):
-                    self.add_data_from_repo(distro_name_loop, distro_version_loop, distro_repo_loop, content or "all")
+        for name_loop in value_or_loop_dir(distro_data.name):
+            for version_loop in value_or_loop_dir(distro_data.version, name_loop):
+                for repo_loop in value_or_loop_dir(distro_data.repo, name_loop, version_loop):
+                    for content_loop in (("sums", "files") if distro_data.content == "all" else [distro_data.content]):
+                        distro_data_loop = DistroData(
+                            name=name_loop,
+                            version=version_loop,
+                            repo=repo_loop,
+                            content=content_loop,
+                        )
+                        output = create_output(distro_data_loop)
+                        self.parse_single_data(
+                            distro_data_loop,
+                            output
+                        )
+                        output.close()
 
 
-    def add_data_from_repo(self, distro_name, distro_version, distro_repo, content):
-        ParserClass = self.__get_parser_class__(distro_name)
+    def parse_single_data(self, distro_data: DistroData, output):
+        ParserClass = self.__get_parser_class__(distro_data.name)
         print(f"Using parser class '{ParserClass.__name__}'")
         
-        parser = ParserClass(self.db_session, distro_name, distro_version, distro_repo, self.ARCHIVES_DIR)
+        parser = ParserClass(distro_data, self.ARCHIVES_DIR, output)
         
-        match content:
+        match distro_data.content:
             case "sums":
                 parser.parse_sums()
             case "files":
                 parser.parse_files()
-            case "all":
-                parser.parse_sums()
-                parser.parse_files()
             case _:
-                raise ValueError(f"SHOULD NOT HAPPEN: invalid content '{content}'")
+                raise ValueError(f"SHOULD NOT HAPPEN: invalid content '{distro_data.content}'")
         
     def commit(self):
         print("Committing transaction..")

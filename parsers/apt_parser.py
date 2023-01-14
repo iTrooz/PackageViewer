@@ -3,19 +3,17 @@ import gzip
 from time import time
 import sys
 
-from sqlalchemy import insert
 from tqdm import tqdm
 
 import database
+from distro_data import DistroData
 
 class AptParser:
 
-    def __init__(self, db_session, distro_name, distro_version, distro_repo, archives_dir) -> None:
-        self.db_session = db_session
-        self.distro_name = distro_name
-        self.distro_version = distro_version
-        self.distro_repo = distro_repo
-        self.repo_path = os.path.join(archives_dir, distro_name, distro_version, distro_repo)
+    def __init__(self, distro_data: DistroData, archives_dir: str, output) -> None:
+        self.distro_data = distro_data
+        self.repo_path = os.path.join(archives_dir, distro_data.name, distro_data.version, distro_data.repo)
+        self.output = output
 
     
     def __parse_sum_file_timer__(func):
@@ -32,9 +30,9 @@ class AptParser:
     def _parse_sum_file_(self, filepath, subrepo):
         def gen_row():
             return {
-                "distro_name":self.distro_name,
-                "distro_version":self.distro_version,
-                "distro_repo":self.distro_repo+"/"+subrepo,
+                "distro_name":self.distro_data.name,
+                "distro_version":self.distro_data.version,
+                "distro_repo":self.distro_data.repo+"/"+subrepo,
                 "others":{},
             }
 
@@ -46,7 +44,7 @@ class AptParser:
 
             if line == "":
                 if "name" in row:
-                    yield row
+                    self.output.add_row(row)
 
                 row = gen_row()
                 continue
@@ -81,8 +79,6 @@ class AptParser:
     def _parse_files_file_(self, filepath):
         file = gzip.open(filepath, "rb")
 
-        filepaths = []
-
         for line in tqdm(file):
             line = line.decode()
 
@@ -97,7 +93,7 @@ class AptParser:
             filepath_split = filepath.split(" ")
             dirname, filename = os.path.dirname(filepath), os.path.basename(filepath_split[-1])
 
-            yield {"package": package_name, "dirname": dirname, "filename": filename}
+            self.output.add_row({"package": package_name, "dirname": dirname, "filename": filename})
 
         file.close()
 
@@ -119,20 +115,11 @@ class AptParser:
 
         for subrepo in os.listdir(self.repo_path):
             if os.path.isdir(os.path.join(self.repo_path, subrepo)):
-                print(f"Inserting sums mapping for {subrepo}..")
-                database.bulk_insert_chunked(
-                    self.db_session,
-                    database.Package,
-                    self._parse_sum_file_(os.path.join(self.repo_path, subrepo, "Packages.gz"), subrepo)
-                )
-                print(f"Inserted sums mapping for {subrepo}!")
-
+                self._parse_sum_file_(os.path.join(self.repo_path, subrepo, "Packages.gz"), subrepo)
+                
 
 
     def parse_files(self):
         print(f"Inserting files for {self.repo_path}..")
-        database.bulk_insert_chunked(
-            self.db_session,
-            database.PackageFile,
-            self._parse_files_file_(os.path.join(self.repo_path, "Contents-amd64.gz"))
-        )
+        self._parse_files_file_(os.path.join(self.repo_path, "Contents-amd64.gz"))
+        
