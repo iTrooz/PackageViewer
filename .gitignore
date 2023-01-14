@@ -1,3 +1,4 @@
 archives
 **/__pycache__
 local/
+*.db
