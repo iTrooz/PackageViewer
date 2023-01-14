@@ -1,14 +1,11 @@
 import os
 
-import database
 
-from parsers.apt_parser import AptParser
-from parsers.dnf_parser import DnfParser
-from parsers.pacman_parser import PacmanParser
-
-from data_outputs.csv_output import CSVOutput
-
-from distro_data import DistroData
+from packageparse.parsers.apt_parser import AptParser
+from packageparse.parsers.dnf_parser import DnfParser
+from packageparse.parsers.pacman_parser import PacmanParser
+from packageparse.distro_data import DistroData
+import packageparse.database
 
 
 class DataManager:

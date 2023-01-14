@@ -1,12 +1,10 @@
 import os
 import gzip
 from time import time
-import sys
 
 from tqdm import tqdm
 
-import database
-from distro_data import DistroData
+from packageparse.distro_data import DistroData
 
 class AptParser:
 
