@@ -54,7 +54,7 @@ class DataManager:
             # do not use TRUNCATE or ALTER TABLE AUTO_INCREMENT because they are DDL operations that will auto-commit
             # we can't either reset the increment at commit time because we will already have the new ids
 
-    def parse_multiple_data(self, distro_data: DistroData, create_output):
+    def __detect_data__(self, distro_data: DistroData):
 
         def value_or_loop_dir(value, *dir):
             if value:
@@ -69,18 +69,23 @@ class DataManager:
             for version_loop in value_or_loop_dir(distro_data.version, name_loop):
                 for repo_loop in value_or_loop_dir(distro_data.repo, name_loop, version_loop):
                     for content_loop in (("sums", "files") if distro_data.content == "all" else [distro_data.content]):
-                        distro_data_loop = DistroData(
+                        yield DistroData(
                             name=name_loop,
                             version=version_loop,
                             repo=repo_loop,
                             content=content_loop,
                         )
-                        output = create_output(distro_data_loop)
-                        self.parse_single_data(
-                            distro_data_loop,
-                            output
-                        )
-                        output.close()
+
+    def parse_multiple_data(self, distro_data: DistroData, create_output):
+
+        for distro_data_loop in self.__detect_data__(distro_data):
+            output = create_output(distro_data_loop)
+            if output:
+                self.parse_single_data(
+                    distro_data_loop,
+                    output
+                )
+                output.close()
 
 
     def parse_single_data(self, distro_data: DistroData, output):

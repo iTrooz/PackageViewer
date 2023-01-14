@@ -24,6 +24,8 @@ parser.add_argument("-c", "--content", required=False, default='all', choices=("
     help = "What content to parse. Accepted values : sums|files|all")
 parser.add_argument("-o", "--output-folder", required=False, default="output-csv",
     help = "Set the output folder for the CSV files")
+parser.add_argument("-w", "--overwrite", required=False, default=False, action="store_true",
+    help = "Overwrite CSV files already existing")
 
 args = parser.parse_args()
 
@@ -41,6 +43,13 @@ def create_output(distro_data: DistroData):
         distro_data.repo.replace("/", "_"),
         distro_data.content
         )) + ".csv"
+    filepath = os.path.join(args.output_folder, filename)
+
+    if os.path.exists(filepath) and not args.overwrite:
+        answer = input(f"File '{filepath}' already exists. Do you want to overwrite it ? [Y/n]")
+        if answer.lower() == 'n':
+            return None
+
     return CSVOutput(os.path.join(args.output_folder, filename))
 
 data_manager.parse_multiple_data(DistroData(
