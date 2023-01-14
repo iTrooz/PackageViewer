@@ -6,12 +6,10 @@ import time
 
 from tqdm import tqdm
 
-from packageparse.data_manager import DataManager
 from packageparse.distro_data import DistroData
 from packageparse.data_outputs.csv_output import CSVOutput
 
 SCRIPT_VERSION = "v1.0 beta"
-data_manager = DataManager()
 
 parser = argparse.ArgumentParser(
     prog = "importcsv",

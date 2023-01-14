@@ -1,12 +1,12 @@
 import argparse
 import os
 
-from packageparse.data_manager import DataManager
+from packageparse.data_parser import DataParser
 from packageparse.distro_data import DistroData
 from packageparse.data_outputs.csv_output import CSVOutput
 
 SCRIPT_VERSION = "v1.0 beta"
-data_manager = DataManager()
+data_parser = DataParser()
 
 parser = argparse.ArgumentParser(
     prog = "gencsv",
@@ -52,7 +52,7 @@ def create_output(distro_data: DistroData):
 
     return CSVOutput(os.path.join(args.output_folder, filename))
 
-data_manager.parse_multiple_data(DistroData(
+data_parser.parse_multiple_data(DistroData(
     name=args.distro, version=args.version, repo=args.repo, content=args.content
 ), create_output)
 
