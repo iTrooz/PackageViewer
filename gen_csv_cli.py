@@ -39,7 +39,6 @@ def create_output(distro_data: DistroData):
     filename = "-".join((
         distro_data.name,
         distro_data.version,
-        distro_data.version,
         distro_data.repo.replace("/", "_"),
         distro_data.content
         )) + ".csv"
