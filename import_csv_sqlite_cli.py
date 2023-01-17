@@ -11,6 +11,50 @@ from packageparse.data_outputs.csv_output import CSVOutput
 
 SCRIPT_VERSION = "v1.0 beta"
 
+
+# ----- FUNCTIONS
+
+
+def __import_csv__timer__(func):
+    def decorator(filepath, table, cursor):
+        print(f"Importing file '{filepath}' in table '{table}'..")
+        start = time.time()
+        func(filepath, table, cursor)
+        end = time.time()
+        print(f"Finished importing file ! ({(end-start):.4f}s)")
+    return decorator
+
+@__import_csv__timer__
+def import_csv(filepath, table, cursor):
+    file = open(filepath, "r")
+    csv_file = csv.reader(file)
+
+    header = next(csv_file)
+
+    fields_str = ', '.join(header)
+    values_str = ', '.join("?"*len(header))
+    insert_query = f"INSERT INTO {table} ({fields_str}) VALUES ({values_str})"
+
+    cursor.executemany(insert_query, csv_file)
+
+    file.close()
+
+
+def create_db(cursor):
+    print("Creating DB..")
+
+    cursor.execute(f'''CREATE TABLE path(dirname)''')
+    import_csv("path.csv", "path", cursor)
+
+    cursor.execute(f'''CREATE TABLE package({fields_package})''')
+    cursor.execute(f'''CREATE TABLE package_file({fields_package_file})''')
+
+    print("Created DB !")
+
+
+# ----- CODE
+
+
 parser = argparse.ArgumentParser(
     prog = "importcsv",
     description = "import CSV files in the database",
@@ -31,57 +75,46 @@ parser.add_argument("-o", "--output-file", required=False, default="output.db",
 
 args = parser.parse_args()
 
-if args.recreate_db:
-    if os.path.exists(args.output_file):
-        os.remove(args.output_file)
-
-conn = sqlite3.connect(args.output_file)
-cursor = conn.cursor()
 
 fields_package = "name, distro_name, distro_version, distro_repo, others, arch, version"
 fields_package_file = "package, dirname, filename"
 
-cursor.execute(f'''CREATE TABLE IF NOT EXISTS package({fields_package})''')
-cursor.execute(f'''CREATE TABLE IF NOT EXISTS package_file({fields_package_file})''')
-
 insert_package = f'''INSERT INTO package ({fields_package}) VALUES(?, ?, ?, ?, ?, ?, ?)'''
 insert_package_file = f'''INSERT INTO package_file ({fields_package_file}) VALUES(?, ?, ?)'''
 
-def get_type(filename):
-    return os.filename
+need_create_db = False
+if os.path.exists(args.output_file):
+    if args.recreate_db:
+        os.remove(args.output_file)
+        need_create_db = True
+else:
+    need_create_db = True
 
-def __import_csv__timer__(func):
-    def decorator(dirname, filename, type):
-        print(f"Importing file {filename}..")
-        start = time.time()
-        func(dirname, filename, type)
-        end = time.time()
-        print(f"Finished ! ({(end-start):.4f}s)")
-    return decorator
+conn = sqlite3.connect(args.output_file)
+cursor = conn.cursor()
 
-@__import_csv__timer__
-def import_csv(dirname, filename, type):
-    file = open(os.path.join(dirname, filename), "r")
-    csv_file = csv.reader(file)
+if need_create_db:
+    create_db(cursor)
+    conn.commit() # Should not be needed because DDL but still
 
-    next(csv_file) # Skip header
-    
-    if args.content and args.content != type:
-        return
-    if type == "sums":
-        cursor.executemany(insert_package, tqdm(csv_file))
-    elif type == "files":
-        cursor.executemany(insert_package_file, tqdm(csv_file))
-    else:
-        raise ValueError(f"Invalid type: {type}")
-
-
-    file.close()
 
 for filename in os.listdir(args.input_folder):
     base, ext = os.path.splitext(filename)
     if ext == ".csv":
-        type = base.split("-")[-1]
-        import_csv(args.input_folder, filename, type)
+        filepath = os.path.join(args.input_folder, filename)
+        content = base.split("-")[-1]
+
+        if args.content and args.content != content:
+            print(f"Skipping file {filepath}")
+            continue
+
+        if content == "sums":
+            table = "package"
+        elif content == "files":
+            table = "package_file"
+        else:
+            raise ValueError(f"Invalid content type: {type}")
+
+        import_csv(filepath, table, cursor)
 
 conn.commit()
