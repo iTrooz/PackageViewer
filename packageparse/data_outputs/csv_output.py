@@ -10,12 +10,14 @@ class CSVOutput:
         self.raw_file = open(filename, "w")
         self.csv_file = csv.writer(self.raw_file, quoting=csv.QUOTE_ALL)
 
-    def add_row(self, row):
-        if type(row) == dict:
-            actual_row = row.values()
-        else: # pray it wil be right
-            actual_row = row
-        self.csv_file.writerow(actual_row)
+        self.header_wrote = False
+
+    def add_row(self, row: dict):
+        if not self.header_wrote:
+            self.csv_file.writerow(row.keys())
+            self.header_wrote = True
+
+        self.csv_file.writerow(row.values())
 
     def set_commit_mode(self):
         pass
