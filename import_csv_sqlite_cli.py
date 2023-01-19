@@ -11,93 +11,154 @@ from packageparse.data_outputs.csv_output import CSVOutput
 
 SCRIPT_VERSION = "v1.0 beta"
 
+class CSVImporter:
 
-# ----- FUNCTIONS
+    def __init__(self, conn):
+        self.conn = conn
+        self.cursor = conn.cursor()
+        
 
+    def import_csv(self, filepath, table):
+        file = open(filepath, "r")
+        csv_file = csv.reader(file)
 
-def import_csv(filepath, table, cursor):
-    file = open(filepath, "r")
-    csv_file = csv.reader(file)
+        header = next(csv_file)
 
-    header = next(csv_file)
+        fields_str = ', '.join(header)
+        values_str = ', '.join("?"*len(header))
+        insert_query = f"INSERT INTO {table} ({fields_str}) VALUES ({values_str})"
 
-    fields_str = ', '.join(header)
-    values_str = ', '.join("?"*len(header))
-    insert_query = f"INSERT INTO {table} ({fields_str}) VALUES ({values_str})"
+        self.cursor.executemany(insert_query, csv_file)
 
-    cursor.executemany(insert_query, csv_file)
+        file.close()
 
-    file.close()
+    def read_csv(self, filepath):
+        file = open(filepath, "r")
+        csv_file = csv.reader(file)
 
-def read_csv(filepath):
-    file = open(filepath, "r")
-    csv_file = csv.reader(file)
+        header = next(csv_file)
 
-    header = next(csv_file)
-
-    return header, csv_file
-
-
-def create_db(cursor):
-    print("Creating DB..")
-
-    STMTS = f'''
-    CREATE TABLE distro(
-        distro_id INT PRIMARY KEY,
-        name TEXT
-    );
-    CREATE TABLE repo_tree(
-        repo_parent_id INT,
-        repo_id INT
-    );
-    CREATE TABLE package(
-        package_id INT PRIMARY KEY,
-        name TEXT,
-        repo_id INT
-    );
-    CREATE TABLE file(
-        package_id INT,
-        dirname_id INT,
-        filename_id INT
-    );
-    CREATE TABLE dirname(
-        dirname_id INT PRIMARY KEY,
-        dirname
-    );
-    CREATE TABLE filename(
-        filename_id INT PRIMARY KEY,
-        filename TEXT
-    );
-    CREATE TABLE path(
-        dirname TEXT PRIMARY KEY
-    );
-    '''
-
-    for stmt in STMTS.split(";"):
-        cursor.execute(stmt)
-
-    import_csv("path.csv", "path", cursor)
-
-    print("Created DB !")
-
-TMP_PACKAGE_TABLE_FIELDS = "distro_name, distro_version, distro_repo, name, arch, version, others"
-
-def create_tmp_tables(cursor):
-    STMTS = f'''
-    CREATE TABLE IF NOT EXISTS tmp_package(
-        {TMP_PACKAGE_TABLE_FIELDS}
-    );
-    CREATE TABLE IF NOT EXISTS tmp_file(
-        package, repo, dirname, filename
-    );
-    '''
-
-    for stmt in STMTS.split(";"):
-        cursor.execute(stmt)
+        return header, csv_file
 
 
-# ----- CODE
+    def create_db(self):
+        print("Creating DB..")
 
+        STMTS = f'''
+        CREATE TABLE distro(
+            distro_id INT PRIMARY KEY,
+            name TEXT
+        );
+        CREATE TABLE repo_tree(
+            repo_parent_id INT,
+            repo_id INT
+        );
+        CREATE TABLE package(
+            package_id INT PRIMARY KEY,
+            name TEXT,
+            repo_id INT
+        );
+        CREATE TABLE file(
+            package_id INT,
+            dirname_id INT,
+            filename_id INT
+        );
+        CREATE TABLE dirname(
+            dirname_id INT PRIMARY KEY,
+            dirname
+        );
+        CREATE TABLE filename(
+            filename_id INT PRIMARY KEY,
+            filename TEXT
+        );
+        CREATE TABLE path(
+            dirname TEXT PRIMARY KEY
+        );
+        '''
+
+        for stmt in STMTS.split(";"):
+            self.cursor.execute(stmt)
+
+        self.import_csv("path.csv", "path")
+
+        print("Created DB !")
+
+
+    def create_tmp_tables(self):
+        
+        TMP_PACKAGE_TABLE_FIELDS = "distro_name, distro_version, distro_repo, name, arch, version, others"
+        
+        STMTS = f'''
+        CREATE TABLE IF NOT EXISTS tmp_package(
+            {TMP_PACKAGE_TABLE_FIELDS}
+        );
+        CREATE TABLE IF NOT EXISTS tmp_file(
+            package, repo, dirname, filename
+        );
+        '''
+
+        for stmt in STMTS.split(";"):
+            self.cursor.execute(stmt)
+
+
+    def read_csvs_in_tmp_tables(self, input_folder, content_filter):
+        for filename in os.listdir(input_folder):
+            base, ext = os.path.splitext(filename)
+            if ext == ".csv":
+                filepath = os.path.join(input_folder, filename)
+                splitted_base = base.split("-")
+                content = splitted_base[-1]
+                repo = splitted_base[-2]
+
+                if content_filter and args.content != content_filter:
+                    print(f"Skipping file {filepath}")
+                    continue
+
+                print(f"Processing file {filepath} with repo {repo} and content {content}")
+
+                fields, data = self.read_csv(filepath)
+                fields_str = ', '.join(fields)
+                placeholders_str= ', '.join("?"*len(fields))
+                if content == "sums":
+                    insert_query = f'''INSERT INTO tmp_package ({fields_str}) VALUES ({placeholders_str})'''
+                elif content == "files":
+                    insert_query = f'''INSERT INTO tmp_file ({fields_str}, repo) VALUES ({placeholders_str}, '{repo}')'''
+                else:
+                    raise ValueError(f"Invalid content type: {type}")
+
+                self.cursor.executemany(insert_query, tqdm(data))
+
+        self.conn.commit()
+
+
+    def insert_repo_tree_table(self):
+        self.cursor.execute('''
+            WITH split(parent_word, word, csv) AS (
+            SELECT 
+                null,
+                null,
+                distro_repo||'/'
+                FROM (
+                    SELECT DISTINCT distro_repo FROM tmp_package
+                )
+            UNION ALL SELECT
+                word,
+                substr(csv, 0, instr(csv, '/')),
+                substr(csv, instr(csv, '/') + 1)
+            FROM split
+            WHERE csv != ''
+            )
+            INSERT INTO repo_tree
+            SELECT DISTINCT parent_word, word FROM split 
+            WHERE parent_word is not null
+        ''')
+        self.conn.commit()
+
+
+
+
+
+# ---------- CODE
 
 parser = argparse.ArgumentParser(
     prog = "importcsv",
@@ -120,11 +181,6 @@ parser.add_argument("-o", "--output-file", required=False, default="output.db",
 args = parser.parse_args()
 
 
-fields_package = "name, distro_name, distro_version, distro_repo, others, arch, version"
-fields_package_file = "package, dirname, filename"
-
-insert_package = f'''INSERT INTO package ({fields_package}) VALUES(?, ?, ?, ?, ?, ?, ?)'''
-insert_package_file = f'''INSERT INTO package_file ({fields_package_file}) VALUES(?, ?, ?)'''
 
 need_create_db = False
 if os.path.exists(args.output_file):
@@ -135,62 +191,13 @@ else:
     need_create_db = True
 
 conn = sqlite3.connect(args.output_file)
-cursor = conn.cursor()
+importer = CSVImporter(conn)
 
 if need_create_db:
-    create_db(cursor)
-    conn.commit() # Should not be needed because DDL but still
+    importer.create_db()
 
-create_tmp_tables(cursor)
+importer.create_tmp_tables()
 
-for filename in os.listdir(args.input_folder):
-    base, ext = os.path.splitext(filename)
-    if ext == ".csv":
-        filepath = os.path.join(args.input_folder, filename)
-        splitted_base = base.split("-")
-        content = splitted_base[-1]
-        repo = splitted_base[-2]
+# importer.read_csvs_in_tmp_tables(args.input_folder, args.content)
 
-        if args.content and args.content != content:
-            print(f"Skipping file {filepath}")
-            continue
-
-        print(f"Processing file {filepath} with repo {repo} and content {content}")
-
-        fields, data = read_csv(filepath)
-        fields_str = ', '.join(fields)
-        placeholders_str= ', '.join("?"*len(fields))
-        if content == "sums":
-            insert_query = f'''INSERT INTO tmp_package ({fields_str}) VALUES ({placeholders_str})'''
-        elif content == "files":
-            insert_query = f'''INSERT INTO tmp_file ({fields_str}, repo) VALUES ({placeholders_str}, '{repo}')'''
-        else:
-            raise ValueError(f"Invalid content type: {type}")
-
-        cursor.executemany(insert_query, tqdm(data))
-
-conn.commit()
-
-
-# fill 'repo_tree' table
-
-cursor.execute('''
-WITH split(parent_word, word, csv) AS (
-  SELECT 
-    null,
-    null,
-    distro_repo||'/'
-	FROM (
-		SELECT DISTINCT distro_repo FROM tmp_package
-	)
-  UNION ALL SELECT
-    word,
-    substr(csv, 0, instr(csv, '/')),
-    substr(csv, instr(csv, '/') + 1)
-  FROM split
-  WHERE csv != ''
-)
-INSERT INTO repo_tree
-SELECT DISTINCT parent_word, word FROM split 
-WHERE parent_word is not null
-''')
+importer.insert_repo_tree_table()
