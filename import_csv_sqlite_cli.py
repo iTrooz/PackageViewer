@@ -15,16 +15,6 @@ SCRIPT_VERSION = "v1.0 beta"
 # ----- FUNCTIONS
 
 
-def __import_csv__timer__(func):
-    def decorator(filepath, table, cursor):
-        print(f"Importing file '{filepath}' in table '{table}'..")
-        start = time.time()
-        func(filepath, table, cursor)
-        end = time.time()
-        print(f"Finished importing file ! ({(end-start):.4f}s)")
-    return decorator
-
-@__import_csv__timer__
 def import_csv(filepath, table, cursor):
     file = open(filepath, "r")
     csv_file = csv.reader(file)
@@ -39,17 +29,71 @@ def import_csv(filepath, table, cursor):
 
     file.close()
 
+def read_csv(filepath):
+    file = open(filepath, "r")
+    csv_file = csv.reader(file)
+
+    header = next(csv_file)
+
+    return header, csv_file
+
 
 def create_db(cursor):
     print("Creating DB..")
 
-    cursor.execute(f'''CREATE TABLE path(dirname)''')
+    STMTS = f'''
+    CREATE TABLE distro(
+        distro_id INT PRIMARY KEY,
+        name TEXT
+    );
+    CREATE TABLE repo_tree(
+        repo_parent_id INT,
+        repo_id INT
+    );
+    CREATE TABLE package(
+        package_id INT PRIMARY KEY,
+        name TEXT,
+        repo_id INT
+    );
+    CREATE TABLE file(
+        package_id INT,
+        dirname_id INT,
+        filename_id INT
+    );
+    CREATE TABLE dirname(
+        dirname_id INT PRIMARY KEY,
+        dirname
+    );
+    CREATE TABLE filename(
+        filename_id INT PRIMARY KEY,
+        filename TEXT
+    );
+    CREATE TABLE path(
+        dirname TEXT PRIMARY KEY
+    );
+    '''
+
+    for stmt in STMTS.split(";"):
+        cursor.execute(stmt)
+
     import_csv("path.csv", "path", cursor)
 
-    cursor.execute(f'''CREATE TABLE package({fields_package})''')
-    cursor.execute(f'''CREATE TABLE package_file({fields_package_file})''')
-
     print("Created DB !")
+
+TMP_PACKAGE_TABLE_FIELDS = "distro_name, distro_version, distro_repo, name, arch, version, others"
+
+def create_tmp_tables(cursor):
+    STMTS = f'''
+    CREATE TABLE IF NOT EXISTS tmp_package(
+        {TMP_PACKAGE_TABLE_FIELDS}
+    );
+    CREATE TABLE IF NOT EXISTS tmp_file(
+        package, repo, dirname, filename
+    );
+    '''
+
+    for stmt in STMTS.split(";"):
+        cursor.execute(stmt)
 
 
 # ----- CODE
@@ -97,24 +141,32 @@ if need_create_db:
     create_db(cursor)
     conn.commit() # Should not be needed because DDL but still
 
+create_tmp_tables(cursor)
 
 for filename in os.listdir(args.input_folder):
     base, ext = os.path.splitext(filename)
     if ext == ".csv":
         filepath = os.path.join(args.input_folder, filename)
-        content = base.split("-")[-1]
+        splitted_base = base.split("-")
+        content = splitted_base[-1]
+        repo = splitted_base[-2]
 
         if args.content and args.content != content:
             print(f"Skipping file {filepath}")
             continue
 
+        print(f"Processing file {filepath} with repo {repo} and content {content}")
+
+        fields, data = read_csv(filepath)
+        fields_str = ', '.join(fields)
+        placeholders_str= ', '.join("?"*len(fields))
         if content == "sums":
-            table = "package"
+            insert_query = f'''INSERT INTO tmp_package ({fields_str}) VALUES ({placeholders_str})'''
         elif content == "files":
-            table = "package_file"
+            insert_query = f'''INSERT INTO tmp_file ({fields_str}, repo) VALUES ({placeholders_str}, '{repo}')'''
         else:
             raise ValueError(f"Invalid content type: {type}")
 
-        import_csv(filepath, table, cursor)
+        cursor.executemany(insert_query, tqdm(data))
 
 conn.commit()
