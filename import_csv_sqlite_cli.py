@@ -47,7 +47,8 @@ class CSVImporter:
         STMTS = f'''
         CREATE TABLE distro(
             distro_id INT PRIMARY KEY,
-            name TEXT
+            name TEXT,
+            version TEXT
         );
         CREATE TABLE repo_tree(
             repo_parent_id INT,
@@ -154,6 +155,13 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    def insert_distro_table(self):
+        self.cursor.execute('''
+            INSERT INTO distro (name, version)
+            SELECT DISTINCT distro_name, distro_version FROM tmp_package
+        ''')
+        self.conn.commit()
+
 
 
 
@@ -200,4 +208,6 @@ importer.create_tmp_tables()
 
 # importer.read_csvs_in_tmp_tables(args.input_folder, args.content)
 
-importer.insert_repo_tree_table()
+# importer.insert_repo_tree_table()
+
+importer.insert_distro_table()
