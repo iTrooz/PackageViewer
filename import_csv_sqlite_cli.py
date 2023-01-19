@@ -46,30 +46,30 @@ class CSVImporter:
 
         STMTS = f'''
         CREATE TABLE distro(
-            distro_id INT PRIMARY KEY,
+            distro_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
             version TEXT
         );
         CREATE TABLE repo_tree(
-            repo_parent_id INT,
-            repo_id INT
+            repo_parent_id INTEGER,
+            repo_id INTEGER
         );
         CREATE TABLE package(
-            package_id INT PRIMARY KEY,
+            package_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT,
-            repo_id INT
+            repo_id INTEGER
         );
         CREATE TABLE file(
-            package_id INT,
-            dirname_id INT,
-            filename_id INT
+            package_id INTEGER,
+            dirname_id INTEGER,
+            filename_id INTEGER
         );
         CREATE TABLE dirname(
-            dirname_id INT PRIMARY KEY,
+            dirname_id INTEGER PRIMARY KEY AUTOINCREMENT,
             dirname
         );
         CREATE TABLE filename(
-            filename_id INT PRIMARY KEY,
+            filename_id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT
         );
         CREATE TABLE path(
@@ -206,8 +206,8 @@ if need_create_db:
 
 importer.create_tmp_tables()
 
-# importer.read_csvs_in_tmp_tables(args.input_folder, args.content)
+importer.read_csvs_in_tmp_tables(args.input_folder, args.content)
 
-# importer.insert_repo_tree_table()
+importer.insert_repo_tree_table()
 
 importer.insert_distro_table()
