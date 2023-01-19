@@ -170,3 +170,27 @@ for filename in os.listdir(args.input_folder):
         cursor.executemany(insert_query, tqdm(data))
 
 conn.commit()
+
+
+# fill 'repo_tree' table
+
+cursor.execute('''
+WITH split(parent_word, word, csv) AS (
+  SELECT 
+    null,
+    null,
+    distro_repo||'/'
+	FROM (
+		SELECT DISTINCT distro_repo FROM tmp_package
+	)
+  UNION ALL SELECT
+    word,
+    substr(csv, 0, instr(csv, '/')),
+    substr(csv, instr(csv, '/') + 1)
+  FROM split
+  WHERE csv != ''
+)
+INSERT INTO repo_tree
+SELECT DISTINCT parent_word, word FROM split 
+WHERE parent_word is not null
+''')
