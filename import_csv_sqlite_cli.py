@@ -50,6 +50,10 @@ class CSVImporter:
             name TEXT,
             version TEXT
         );
+        CREATE TABLE repo(
+            repo_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT
+        );
         CREATE TABLE repo_tree(
             repo_parent_id INTEGER,
             repo_id INTEGER
