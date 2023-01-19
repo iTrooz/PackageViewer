@@ -46,7 +46,7 @@ class CSVImporter:
 
         STMTS = f'''
         CREATE TABLE distro(
-            distro_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            distro_id INTEGER PRIMARY KEY,
             name TEXT,
             version TEXT
         );
