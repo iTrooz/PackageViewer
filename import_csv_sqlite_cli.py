@@ -47,16 +47,14 @@ class CSVImporter:
         STMTS = f'''
         CREATE TABLE distro(
             distro_id INTEGER PRIMARY KEY,
+            repo_id INTEGER,
             name TEXT,
             version TEXT
         );
         CREATE TABLE repo(
             repo_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            distro_id INTEGER,
             name TEXT
-        );
-        CREATE TABLE repo_tree(
-            repo_parent_id INTEGER,
-            repo_id INTEGER
         );
         CREATE TABLE package(
             package_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,13 +98,17 @@ class CSVImporter:
         CREATE TABLE IF NOT EXISTS tmp_file(
             package, repo, dirname, filename
         );
+        CREATE TABLE tmp_repo(
+            repo_id INTEGER PRIMARY KEY,
+            name TEXT
+        );
         '''
 
         for stmt in STMTS.split(";"):
             self.cursor.execute(stmt)
 
 
-    def read_csvs_in_tmp_tables(self, input_folder, content_filter):
+    def import_csvs_in_tmp_tables(self, input_folder, content_filter):
         for filename in os.listdir(input_folder):
             base, ext = os.path.splitext(filename)
             if ext == ".csv":
@@ -136,35 +138,71 @@ class CSVImporter:
         self.conn.commit()
 
 
-    def insert_repo_tree_table(self):
-        self.cursor.execute('''
-            WITH split(parent_word, word, csv) AS (
-            SELECT 
-                null,
-                null,
-                distro_repo||'/'
-                FROM (
-                    SELECT DISTINCT distro_repo FROM tmp_package
-                )
-            UNION ALL SELECT
-                word,
-                substr(csv, 0, instr(csv, '/')),
-                substr(csv, instr(csv, '/') + 1)
-            FROM split
-            WHERE csv != ''
-            )
-            INSERT INTO repo_tree
-            SELECT DISTINCT parent_word, word FROM split 
-            WHERE parent_word is not null
-        ''')
-        self.conn.commit()
-
     def insert_distro_table(self):
         self.cursor.execute('''
             INSERT INTO distro (name, version)
             SELECT DISTINCT distro_name, distro_version FROM tmp_package
         ''')
         self.conn.commit()
+
+    def insert_repo_table(self):
+        self.cursor.execute('''
+           INSERT INTO repo(distro_id, name)
+            SELECT DISTINCT distro.distro_id, SUBSTR(distro_repo, 0, INSTR(distro_repo, '/')) FROM tmp_package
+            JOIN distro
+            ON distro.name = tmp_package.distro_name
+            AND distro.version = tmp_package.distro_version
+        ''')
+
+        self.cursor.execute('''
+            INSERT INTO tmp_repo(repo_id, name)
+            SELECT DISTINCT repo.repo_id, repo.name FROM repo
+            JOIN distro ON distro.distro_id = repo.distro_id
+            JOIN tmp_package ON
+            tmp_package.distro_name = distro.name
+            AND tmp_package.distro_version = distro.version
+        ''')
+        self.conn.commit()
+
+    def insert_package_table(self):
+        self.cursor.execute('''
+            INSERT INTO package (name, repo_id)
+            SELECT tmp_package.name, tmp_repo.repo_id FROM tmp_package
+            JOIN tmp_repo
+            ON tmp_repo.name = SUBSTR(distro_repo, 0, INSTR(distro_repo, '/'))
+        ''')
+        self.conn.commit()
+
+    def insert_dirname_table(self):
+        self.cursor.execute('''
+            INSERT INTO dirname (dirname)
+            SELECT DISTINCT dirname FROM tmp_file
+        ''')
+        self.conn.commit()
+
+    def insert_filename_table(self):
+        self.cursor.execute('''
+            INSERT INTO filename (filename)
+            SELECT DISTINCT filename FROM tmp_file
+        ''')
+        self.conn.commit()
+
+    def insert_file_table(self):
+        self.cursor.execute('''
+            -- Insert file table
+            INSERT INTO file (package_id, dirname_id, filename_id)
+            SELECT package_id, dirname_id, filename_id FROM tmp_file
+            -- get all packages
+            JOIN package ON package.name = tmp_file.package
+            -- filter by our repos
+            JOIN tmp_repo ON tmp_repo.repo_id = package.repo_id
+            -- join dirname
+            JOIN dirname ON dirname.dirname = tmp_file.dirname
+            -- join filename
+            JOIN filename ON filename.filename = tmp_file.filename
+        ''')
+        self.conn.commit()
+
 
 
 
@@ -210,8 +248,15 @@ if need_create_db:
 
 importer.create_tmp_tables()
 
-importer.read_csvs_in_tmp_tables(args.input_folder, args.content)
-
-importer.insert_repo_tree_table()
+importer.import_csvs_in_tmp_tables(args.input_folder, args.content)
 
 importer.insert_distro_table()
+
+importer.insert_repo_table()
+
+importer.insert_package_table()
+
+importer.insert_dirname_table()
+importer.insert_filename_table()
+
+importer.insert_file_table()
