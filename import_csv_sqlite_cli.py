@@ -16,6 +16,17 @@ class CSVImporter:
     def __init__(self, conn):
         self.conn = conn
         self.cursor = conn.cursor()
+
+    def step(fun):
+        def decorator(*args, **kwargs):
+            print(f"----- Step '{fun.__name__}' started!")
+            start = time.time()
+            result = fun(*args, **kwargs)
+            end = time.time()
+            print(f"----- Step '{fun.__name__}' finished! ({(end-start):.4f}s)")
+            return result
+        return decorator
+
         
 
     def import_csv(self, filepath, table):
@@ -41,6 +52,7 @@ class CSVImporter:
         return header, csv_file
 
 
+    @step
     def create_db(self):
         print("Creating DB..")
 
@@ -86,7 +98,7 @@ class CSVImporter:
 
         print("Created DB !")
 
-
+    @step
     def create_tmp_tables(self):
         
         TMP_PACKAGE_TABLE_FIELDS = "distro_name, distro_version, distro_repo, name, arch, version, others"
@@ -107,7 +119,7 @@ class CSVImporter:
         for stmt in STMTS.split(";"):
             self.cursor.execute(stmt)
 
-
+    @step
     def import_csvs_in_tmp_tables(self, input_folder, content_filter):
         for filename in os.listdir(input_folder):
             base, ext = os.path.splitext(filename)
@@ -137,7 +149,7 @@ class CSVImporter:
 
         self.conn.commit()
 
-
+    @step
     def insert_distro_table(self):
         self.cursor.execute('''
             INSERT INTO distro (name, version)
@@ -145,6 +157,7 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    @step
     def insert_repo_table(self):
         self.cursor.execute('''
            INSERT INTO repo(distro_id, name)
@@ -164,6 +177,7 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    @step
     def insert_package_table(self):
         self.cursor.execute('''
             INSERT INTO package (name, repo_id)
@@ -173,6 +187,7 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    @step
     def insert_dirname_table(self):
         self.cursor.execute('''
             INSERT INTO dirname (dirname)
@@ -180,6 +195,7 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    @step
     def insert_filename_table(self):
         self.cursor.execute('''
             INSERT INTO filename (filename)
@@ -187,6 +203,7 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    @step
     def insert_file_table(self):
         self.cursor.execute('''
             INSERT INTO file (package_id, dirname_id, filename_id)
@@ -198,12 +215,14 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    @step
     def delete_tmp_tables(self):
         self.cursor.execute("DROP TABLE tmp_package")
         self.cursor.execute("DROP TABLE tmp_file")
         self.cursor.execute("DROP TABLE tmp_repo")
         self.conn.commit()
 
+    @step
     def vacuum_db(self):
         self.cursor.execute("VACUUM")
         self.conn.commit()
