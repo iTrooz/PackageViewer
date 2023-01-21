@@ -189,24 +189,19 @@ class CSVImporter:
 
     def insert_file_table(self):
         self.cursor.execute('''
-            -- Insert file table
             INSERT INTO file (package_id, dirname_id, filename_id)
             SELECT package_id, dirname_id, filename_id FROM tmp_file
-            -- get all packages
             JOIN package ON package.name = tmp_file.package
-            -- filter by our repos
             JOIN tmp_repo ON tmp_repo.repo_id = package.repo_id
-            -- join dirname
             JOIN dirname ON dirname.dirname = tmp_file.dirname
-            -- join filename
             JOIN filename ON filename.filename = tmp_file.filename
         ''')
         self.conn.commit()
 
     def delete_tmp_tables(self):
-        self.cursor.execute("DELETE TABLE tmp_package")
-        self.cursor.execute("DELETE TABLE tmp_file")
-        self.cursor.execute("DELETE TABLE tmp_repo")
+        self.cursor.execute("DROP TABLE tmp_package")
+        self.cursor.execute("DROP TABLE tmp_file")
+        self.cursor.execute("DROP TABLE tmp_repo")
         self.conn.commit()
 
     def vacuum_db(self):
