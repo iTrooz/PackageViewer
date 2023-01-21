@@ -110,7 +110,7 @@ class CSVImporter:
         CREATE TABLE IF NOT EXISTS tmp_file(
             package, repo, dirname, filename
         );
-        CREATE TABLE tmp_repo(
+        CREATE TABLE IF NOT EXISTS tmp_repo(
             repo_id INTEGER PRIMARY KEY,
             name TEXT
         );
