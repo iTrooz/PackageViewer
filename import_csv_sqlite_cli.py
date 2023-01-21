@@ -203,6 +203,17 @@ class CSVImporter:
         ''')
         self.conn.commit()
 
+    def delete_tmp_tables(self):
+        self.cursor.execute("DELETE TABLE tmp_package")
+        self.cursor.execute("DELETE TABLE tmp_file")
+        self.cursor.execute("DELETE TABLE tmp_repo")
+        self.conn.commit()
+
+    def vacuum_db(self):
+        self.cursor.execute("VACUUM")
+        self.conn.commit()
+
+
 
 
 
@@ -260,3 +271,7 @@ importer.insert_dirname_table()
 importer.insert_filename_table()
 
 importer.insert_file_table()
+
+importer.delete_tmp_tables()
+
+importer.vacuum_db()
