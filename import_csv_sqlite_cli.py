@@ -131,7 +131,7 @@ class CSVImporter:
                 repo = splitted_base[-2]
 
                 if content_filter and args.content != content_filter:
-                    print(f"Skipping file {filepath}")
+                    print(f"Skipping file {filename}")
                     continue
 
                 if content == "sums":
