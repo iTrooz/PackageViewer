@@ -120,11 +120,12 @@ class CSVImporter:
             self.cursor.execute(stmt)
 
     @step
-    def import_csvs_in_tmp_tables(self, input_folder, content_filter):
+    def import_csvs_in_tmp_tables(self, input_folder, content_filter=None, dedup_sums=True):
+        sums_files = []
+        files_files = []
         for filename in os.listdir(input_folder):
             base, ext = os.path.splitext(filename)
             if ext == ".csv":
-                filepath = os.path.join(input_folder, filename)
                 splitted_base = base.split("-")
                 content = splitted_base[-1]
                 repo = splitted_base[-2]
@@ -133,21 +134,64 @@ class CSVImporter:
                     print(f"Skipping file {filepath}")
                     continue
 
-                print(f"Processing file {filepath} with repo {repo} and content {content}")
-
-                fields, data = self.read_csv(filepath)
-                fields_str = ', '.join(fields)
-                placeholders_str= ', '.join("?"*len(fields))
                 if content == "sums":
-                    insert_query = f'''INSERT INTO tmp_package ({fields_str}) VALUES ({placeholders_str})'''
+                    l = sums_files
                 elif content == "files":
-                    insert_query = f'''INSERT INTO tmp_file ({fields_str}, repo) VALUES ({placeholders_str}, '{repo}')'''
+                    l = files_files
                 else:
-                    raise ValueError(f"Invalid content type: {type}")
+                    raise ValueError(f"Invalid content type: {content}")
+                l.append((os.path.join(input_folder, filename), repo))
 
-                self.cursor.executemany(insert_query, tqdm(data))
+        self.import_sums_csvs_in_tmp_table(sums_files, dedup_sums)
+        self.import_files_csvs_in_tmp_table(files_files)
+      
+
+    def import_sums_csvs_in_tmp_table(self, sums_files, dedup_sums):
+        sums_data = []
+
+        for filepath, repo in sums_files:
+            print(f"Processing file {filepath} with repo {repo} and content sums")
+
+            f = open(filepath)
+            sums_data.extend(csv.DictReader(f))
+            f.close()
+        
+        sums_data = sorted(sums_data, key=lambda d: d["name"])
+
+        if dedup_sums:
+            dedup_sums_data = []
+            pkg_name = None
+            for sum in sums_data:
+                if sum["name"] != pkg_name:
+                    pkg_name = sum["name"]
+                    dedup_sums_data.append(sum)
+            sums_data = dedup_sums_data
+
+        fields = sums_data[0].keys()
+        fields_str = ', '.join(fields)
+        placeholders_str= ', '.join("?"*len(fields))
+
+        insert_query = f'''INSERT INTO tmp_package ({fields_str}) VALUES ({placeholders_str})'''
+        
+        insert_data = (list(sum.values()) for sum in sums_data)
+        self.cursor.executemany(insert_query, tqdm(insert_data))
+        self.conn.commit()
+
+    def import_files_csvs_in_tmp_table(self, files_files):
+        for filepath, repo in files_files:
+            print(f"Processing file {filepath} with repo {repo} and content files")
+            
+            fields, data = self.read_csv(filepath)
+            fields_str = ', '.join(fields)
+            placeholders_str= ', '.join("?"*len(fields))
+
+            insert_query = f'''INSERT INTO tmp_file ({fields_str}) VALUES ({placeholders_str})'''
+
+            self.cursor.executemany(insert_query, tqdm(data))
 
         self.conn.commit()
+
+
 
     @step
     def insert_distro_table(self):
