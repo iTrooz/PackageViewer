@@ -104,13 +104,13 @@ class CSVImporter:
         TMP_PACKAGE_TABLE_FIELDS = "distro_name, distro_version, distro_repo, name, arch, version, others"
         
         STMTS = f'''
-        CREATE TABLE IF NOT EXISTS tmp_package(
+        CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package(
             {TMP_PACKAGE_TABLE_FIELDS}
         );
-        CREATE TABLE IF NOT EXISTS tmp_file(
+        CREATE TEMPORARY TABLE IF NOT EXISTS tmp_file(
             package, repo, dirname, filename
         );
-        CREATE TABLE IF NOT EXISTS tmp_repo(
+        CREATE TEMPORARY TABLE IF NOT EXISTS tmp_repo(
             repo_id INTEGER PRIMARY KEY,
             name TEXT
         );
@@ -261,13 +261,6 @@ class CSVImporter:
         self.conn.commit()
 
     @step
-    def delete_tmp_tables(self):
-        self.cursor.execute("DROP TABLE tmp_package")
-        self.cursor.execute("DROP TABLE tmp_file")
-        self.cursor.execute("DROP TABLE tmp_repo")
-        self.conn.commit()
-
-    @step
     def vacuum_db(self):
         self.cursor.execute("VACUUM")
         self.conn.commit()
@@ -330,7 +323,5 @@ importer.insert_dirname_table()
 importer.insert_filename_table()
 
 importer.insert_file_table()
-
-importer.delete_tmp_tables()
 
 importer.vacuum_db()
