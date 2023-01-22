@@ -185,7 +185,7 @@ class CSVImporter:
             fields_str = ', '.join(fields)
             placeholders_str= ', '.join("?"*len(fields))
 
-            insert_query = f'''INSERT INTO tmp_file ({fields_str}) VALUES ({placeholders_str})'''
+            insert_query = f'''INSERT INTO tmp_file ({fields_str}, repo) VALUES ({placeholders_str}, '{repo}')'''
 
             self.cursor.executemany(insert_query, tqdm(data))
 
@@ -256,6 +256,7 @@ class CSVImporter:
             JOIN tmp_repo ON tmp_repo.repo_id = package.repo_id
             JOIN dirname ON dirname.dirname = tmp_file.dirname
             JOIN filename ON filename.filename = tmp_file.filename
+            WHERE tmp_file.repo = tmp_repo.name
         ''')
         self.conn.commit()
 
