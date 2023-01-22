@@ -5,6 +5,7 @@ import csv
 import time
 
 from tqdm import tqdm
+from pydpkg import Dpkg
 
 from packageparse.distro_data import DistroData
 from packageparse.data_outputs.csv_output import CSVOutput
@@ -160,11 +161,16 @@ class CSVImporter:
 
         if dedup_sums:
             dedup_sums_data = []
-            pkg_name = None
-            for sum in sums_data:
-                if sum["name"] != pkg_name:
-                    pkg_name = sum["name"]
-                    dedup_sums_data.append(sum)
+            pkg_sum = {"name": None}
+            sums_data.append({"name": None})
+            for loop_sum in sums_data:
+                if loop_sum["name"] == pkg_sum["name"]:
+                    if Dpkg.compare_versions(loop_sum["version"], pkg_sum["version"]) == 1:
+                        pkg_sum = loop_sum
+                else:
+                    if pkg_sum["name"] != None:
+                        dedup_sums_data.append(pkg_sum)
+                    pkg_sum = loop_sum
             sums_data = dedup_sums_data
 
         fields = sums_data[0].keys()
