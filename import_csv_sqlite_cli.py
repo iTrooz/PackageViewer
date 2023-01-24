@@ -337,5 +337,3 @@ importer.insert_dirname_table()
 importer.insert_filename_table()
 
 importer.insert_file_table()
-
-importer.vacuum_db()
