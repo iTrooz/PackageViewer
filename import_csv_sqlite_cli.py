@@ -14,9 +14,18 @@ SCRIPT_VERSION = "v1.0 beta"
 
 class CSVImporter:
 
-    def __init__(self, conn):
-        self.conn = conn
-        self.cursor = conn.cursor()
+    def __init__(self, db_filepath):
+        self.db_filepath = db_filepath
+        self.connect_db()
+
+    def connect_db(self):
+        self.conn = sqlite3.connect(self.db_filepath)
+        self.cursor = self.conn.cursor()
+
+    def disconnect_db(self):
+        self.conn.close()
+        self.conn = None
+        self.cursor = None
 
     def step(fun):
         def decorator(*args, **kwargs):
@@ -309,8 +318,7 @@ if os.path.exists(args.output_file):
 else:
     need_create_db = True
 
-conn = sqlite3.connect(args.output_file)
-importer = CSVImporter(conn)
+importer = CSVImporter(args.output_file)
 
 if need_create_db:
     importer.create_db()
