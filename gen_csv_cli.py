@@ -4,6 +4,7 @@ import os
 from packageparse.data_parser import DataParser
 from packageparse.distro_data import DistroData
 from packageparse.data_outputs.csv_output import CSVOutput
+import timer
 
 SCRIPT_VERSION = "v1.0 beta"
 data_parser = DataParser()
@@ -51,8 +52,11 @@ def create_output(distro_data: DistroData):
 
     return CSVOutput(os.path.join(args.output_folder, filename))
 
-data_parser.parse_multiple_data(DistroData(
-    name=args.distro, version=args.version, repo=args.repo, content=args.content
-), create_output)
+timer.call(
+    data_parser.parse_multiple_data,
+    DistroData(
+        name=args.distro, version=args.version, repo=args.repo, content=args.content
+    ), create_output
+)
 
 print("Finished !")
