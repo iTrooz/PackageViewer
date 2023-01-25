@@ -280,6 +280,15 @@ class CSVImporter:
         self.cursor.execute("VACUUM")
         self.conn.commit()
 
+    @step
+    def add_indexes(self):
+        self.cursor.execute('''CREATE INDEX "index-dirname-dirname" ON "dirname" ("dirname")''')
+        self.cursor.execute('''CREATE INDEX "index-filename-filename" ON "filename" ("filename")''')
+        self.cursor.execute('''CREATE INDEX "index-file-dirname_id" ON "file" ("dirname_id")''')
+        self.cursor.execute('''CREATE INDEX "index-file-filename_id" ON "file" ("filename_id")''')
+        self.cursor.execute('''CREATE INDEX "index-file-package_id" ON "file" ("package_id")''')
+        self.cursor.execute('''CREATE INDEX "index-package-name" ON "package" ("name")''')
+
 
 
 
@@ -335,5 +344,7 @@ importer.insert_package_table()
 
 importer.insert_dirname_table()
 importer.insert_filename_table()
+
+importer.add_indexes()
 
 importer.insert_file_table()
