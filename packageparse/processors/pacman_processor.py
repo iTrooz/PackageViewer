@@ -1,0 +1,2 @@
+class PacmanProcessor:
+    pass
