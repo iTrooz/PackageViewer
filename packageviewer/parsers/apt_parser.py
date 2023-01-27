@@ -4,7 +4,7 @@ from time import time
 
 from tqdm import tqdm
 
-from packageparse.distro_data import DistroData
+from packageviewer.distro_data import DistroData
 
 def loop_dirs(base_dir):
     for subdir in os.listdir(base_dir):

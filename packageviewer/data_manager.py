@@ -1,12 +1,12 @@
 import os
 
 
-from packageparse.processors.apt_processor import AptProcessor
-from packageparse.processors.dnf_processor import DnfProcessor
-from packageparse.processors.pacman_processor import PacmanProcessor
+from packageviewer.processors.apt_processor import AptProcessor
+from packageviewer.processors.dnf_processor import DnfProcessor
+from packageviewer.processors.pacman_processor import PacmanProcessor
 
-from packageparse.distro_data import DistroData
-import packageparse.database
+from packageviewer.distro_data import DistroData
+import packageviewer.database
 
 
 class DataManager:

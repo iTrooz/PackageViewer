@@ -1,7 +1,7 @@
 from pydpkg import Dpkg
 
-from packageparse.parsers.apt_parser import AptParser
-from packageparse.inserters.apt_inserter import AptInserter
+from packageviewer.parsers.apt_parser import AptParser
+from packageviewer.inserters.apt_inserter import AptInserter
 
 class AptProcessor:
 

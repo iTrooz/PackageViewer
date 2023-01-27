@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from packageparse.distro_data import DistroData
+from packageviewer.distro_data import DistroData
 
 class DnfParser:
 

@@ -1,8 +1,8 @@
 import argparse
 import os
 
-from packageparse.data_manager import DataManager
-from packageparse.distro_data import DistroData
+from packageviewer.data_manager import DataManager
+from packageviewer.distro_data import DistroData
 import timer
 
 SCRIPT_VERSION = "v1.0 beta"

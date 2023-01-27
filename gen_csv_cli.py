@@ -1,9 +1,9 @@
 import argparse
 import os
 
-from packageparse.data_parser import DataParser
-from packageparse.distro_data import DistroData
-from packageparse.data_outputs.csv_output import CSVOutput
+from packageviewer.data_parser import DataParser
+from packageviewer.distro_data import DistroData
+from packageviewer.data_outputs.csv_output import CSVOutput
 import timer
 
 SCRIPT_VERSION = "v1.0 beta"
