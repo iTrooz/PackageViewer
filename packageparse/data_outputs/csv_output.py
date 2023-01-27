@@ -12,12 +12,19 @@ class CSVOutput:
 
         self.header_wrote = False
 
-    def add_row(self, row: dict):
-        if not self.header_wrote:
-            self.csv_file.writerow(row.keys())
-            self.header_wrote = True
+    def set_header(self, keys: list):
+        self.csv_file.writerow(keys)
 
-        self.csv_file.writerow(row.values())
+    def add_row(self, row):
+        if type(row) == dict:
+            if not self.header_wrote:
+                self.set_header(row.keys())
+                self.header_wrote = True
+            values = row.values()
+        else: # hope it's a compatible iterable
+            values = row
+
+        self.csv_file.writerow(values)
 
     def set_commit_mode(self):
         pass
