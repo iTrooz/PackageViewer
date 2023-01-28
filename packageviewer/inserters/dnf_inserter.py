@@ -13,4 +13,8 @@ class DnfInserter:
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
             CREATE TABLE IF NOT EXISTS tmp_package (pkgId, name, version)
         ''')
+
+        self.table_tmp_file = SQLTable(conn=self.conn, table_name="tmp_file", create_query='''
+            CREATE TABLE IF NOT EXISTS tmp_file (pkgId, dirname, filename)
+        ''')
     

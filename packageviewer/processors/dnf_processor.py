@@ -38,9 +38,18 @@ class DnfProcessor:
         sums_data = dedup_sums_data
 
         self.inserter.table_tmp_package.add_rows(sums_data)
+    
+    def process_files(self):
+        files_list = self.parser.parse_files()
+
+        files_data = []
+        for files_loop in files_list:
+            files_data.extend(files_loop)
+
+        self.inserter.table_tmp_file.add_rows(files_data)
 
     def process(self):
         self.process_sums()
-        # self.process_files()
+        self.process_files()
         # self.inserter.normalize()
 

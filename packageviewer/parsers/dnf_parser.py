@@ -27,12 +27,15 @@ class DnfParser:
     def _parse_files_file_(self, filepath, repo):
         conn = sqlite3.connect(filepath)
 
-        cursor = conn.execute("SELECT pkgKey, dirname, filenames, filetypes FROM filelist")
+        cursor = conn.execute('''
+            SELECT pkgId, dirname, filenames, filetypes FROM filelist
+            JOIN packages ON packages.pkgKey = filelist.pkgKey
+        ''')
 
         for row in cursor:
             for filename, filetype in zip(row[2].split("/"), row[3]):
                 if filetype == 'f':
-                    yield {"repo": repo, "package_id": row[0], "dirname": row[1], "filename": filename}
+                    yield {"pkgId": row[0], "dirname": row[1], "filename": filename}
         
         conn.close()
 
