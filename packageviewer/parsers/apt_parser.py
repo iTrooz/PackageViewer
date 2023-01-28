@@ -5,13 +5,7 @@ from time import time
 from tqdm import tqdm
 
 from packageviewer.distro_data import DistroData
-
-def loop_dirs(base_dir):
-    for subdir in os.listdir(base_dir):
-        full_subdir = os.path.join(base_dir, subdir)
-        if os.path.isdir(full_subdir):
-            yield subdir, full_subdir
-    
+from packageviewer import utils
 
 class AptParser:
 
@@ -102,10 +96,10 @@ class AptParser:
         file.close()
 
     def parse_sums(self):
-        for repo, full_repo in loop_dirs(self.dir_path):
-            for area, full_area in loop_dirs(full_repo):
+        for repo, full_repo in utils.loop_dirs(self.dir_path):
+            for area, full_area in utils.loop_dirs(full_repo):
                 yield self._parse_sum_file_(os.path.join(full_area, "Packages.gz"), repo, area)
 
     def parse_files(self):
-        for repo, full_repo in loop_dirs(self.dir_path):
+        for repo, full_repo in utils.loop_dirs(self.dir_path):
             yield self._parse_files_file_(os.path.join(full_repo, "Contents-amd64.gz"), repo)
