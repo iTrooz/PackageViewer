@@ -33,7 +33,7 @@ if args.reset_db:
 print(f"Operation requested : process '{args.distro}/{args.version}'")
 
 timer.call(
-    data_manager.process_data_point, args.distro, args.version, "archives/ubuntu/22", args.output_file
+    data_manager.process_data_point, args.distro, args.version, f"archives/{args.distro}/{args.version}", args.output_file
 )
 
 print("Finished !")
