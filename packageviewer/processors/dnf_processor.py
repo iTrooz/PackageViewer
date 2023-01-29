@@ -6,6 +6,8 @@ import rpm_vercmp
 class DnfProcessor:
 
     def __init__(self, distro_name, distro_version, dir_path, output_db_path) -> None:
+        self.distro_name = distro_name
+        self.distro_version = distro_version
         self.parser = DnfParser(distro_name, distro_version, dir_path)
         self.inserter = DnfInserter(output_db_path)
 
@@ -51,5 +53,4 @@ class DnfProcessor:
     def process(self):
         self.process_sums()
         self.process_files()
-        # self.inserter.normalize()
-
+        self.inserter.normalize(self.distro_name, self.distro_version)

@@ -19,7 +19,7 @@ class DnfParser:
         cursor = conn.execute("SELECT pkgId, name, version, release, epoch FROM packages")
 
         for row in cursor:
-            yield {"pkgId": row[0], "name": row[1], "version": row[2], "release": row[3], "epoch": row[4]}
+            yield {"pkgId": row[0], "name": row[1], "version": row[2], "release": row[3], "epoch": row[4], "repo": repo}
         
         conn.close()
 
@@ -35,7 +35,7 @@ class DnfParser:
         for row in cursor:
             for filename, filetype in zip(row[2].split("/"), row[3]):
                 if filetype == 'f':
-                    yield {"pkgId": row[0], "dirname": row[1], "filename": filename}
+                    yield {"pkgId": row[0], "dirname": row[1], "filename": filename, "repo": repo}
         
         conn.close()
 
