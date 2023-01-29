@@ -6,14 +6,34 @@ from packageviewer.inserters.apt_inserter import AptInserter
 class AptProcessor:
 
     def __init__(self, distro_name, distro_version, dir_path, output_db_path) -> None:
+        self.distro_name = distro_name
+        self.distro_version = distro_version
         self.parser = AptParser(distro_name, distro_version, dir_path)
         self.inserter = AptInserter(output_db_path)
 
 
     def process(self):
-        self.process_sums()
-        self.process_files()
-        self.inserter.normalize()
+        self.inserter.create_tables()
+
+        self.inserter.insert_distro(self.distro_name, self.distro_version)
+
+        sums_list = self.process_sums()
+        repos_list = set(sum["distro_repo"] for sum in sums_list)
+        
+        self.inserter.insert_repos(repos_list)
+
+        self.inserter.insert_packages(sums_list)
+        
+        files_list = self.process_files()
+
+        dirnames_list = set(file["dirname"] for file in files_list)
+        filenames_list = set(file["filename"] for file in files_list)
+        
+        self.inserter.insert_dirnames(dirnames_list)
+        self.inserter.insert_filenames(filenames_list)
+        self.inserter.insert_files(files_list)
+
+
 
     def process_sums(self):
         sums_list = self.parser.parse_sums()
@@ -41,7 +61,7 @@ class AptProcessor:
         for sum in sums_data:
             sum["others"] = str(sum["others"])
 
-        self.inserter.table_tmp_package.add_rows(sums_data)
+        return sums_data
 
     def process_files(self):
         files_list = self.parser.parse_files()
@@ -50,4 +70,4 @@ class AptProcessor:
         for files_loop in files_list:
             files_data.extend(files_loop)
 
-        self.inserter.table_tmp_file.add_rows(files_data)
+        return files_data
