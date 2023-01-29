@@ -12,10 +12,12 @@ timer.start("gen files")
 files = list(files_gen)
 timer.stop()
 
-if os.path.exists("/tmp/ram/out.db"):
-    os.remove("/tmp/ram/out.db")
+DB_FILENAME = "/tmp/ram/out.db"
 
-conn = sqlite3.connect("/tmp/ram/out.db")
+if os.path.exists(DB_FILENAME):
+    os.remove(DB_FILENAME)
+
+conn = sqlite3.connect(DB_FILENAME)
 conn.executescript('''CREATE TABLE file(
             dirname_id INTEGER,
             filename_id INTEGER
@@ -29,8 +31,8 @@ conn.executescript('''CREATE TABLE file(
             filename TEXT
         );''')
 
-def way1(): # 37.7s
-    conn.executescript('''CREATE TABLE tmp_file(
+def way1(): # 38.6s
+    conn.executescript('''CREATE TEMPORARY TABLE tmp_file(
         package, repo, dirname, filename);
     ''')
 
@@ -59,31 +61,53 @@ def way1(): # 37.7s
     ''')
     timer.stop()
 
-def way2():
+def way2(): # 36.6s
     dirnames = {}
     filenames = {}
 
     timer.start("all insertions")
     for file in files:
         filename = file["filename"]
-        if not filename in filenames:
+        filename_id = filenames.get(filename)
+        if not filename_id:
             cursor = conn.execute("INSERT INTO filename (filename) VALUES (?)", (filename,))
             filename_id = cursor.lastrowid
             filenames[filename] = cursor.lastrowid
-        else:
-            filename_id = filenames[filename]
 
         dirname = file["dirname"]
-        if not dirname in dirnames:
+        dirname_id = dirnames.get(dirname)
+        if not dirname_id:
             cursor = conn.execute("INSERT INTO dirname (dirname) VALUES (?)", (dirname,))
             dirname_id = cursor.lastrowid
             dirnames[dirname] = cursor.lastrowid
-        else:
-            dirname_id = dirnames[dirname]
 
         cursor = conn.execute("INSERT INTO file (dirname_id, filename_id) VALUES (?, ?)", (dirname_id, filename_id))
     timer.stop()
 
-way2()
+def way3(): # 9.5h calculé
+    timer.start("all insertions")
+    for file in files:
+        filename = file["filename"]
+        cursor = conn.execute("SELECT filename_id FROM filename WHERE filename = ?", (filename,))
+        row = cursor.fetchone()
+        if row == None:
+            cursor = conn.execute("INSERT INTO filename (filename) VALUES (?)", (filename,))
+            filename_id = cursor.lastrowid
+        else:
+            filename_id = row[0]
+
+        dirname = file["dirname"]
+        cursor = conn.execute("SELECT dirname_id FROM dirname WHERE dirname = ?", (dirname,))
+        row = cursor.fetchone()
+        if row == None:
+            cursor = conn.execute("INSERT INTO dirname (dirname) VALUES (?)", (dirname,))
+            dirname_id = cursor.lastrowid
+        else:
+            dirname_id = row[0]
+
+        conn.execute("INSERT INTO file (dirname_id, filename_id) VALUES (?, ?)", (dirname_id, filename_id))
+    timer.stop()
+
+way1()
 
 conn.commit()
