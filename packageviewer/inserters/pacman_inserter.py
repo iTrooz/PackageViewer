@@ -1,13 +1,13 @@
 import sqlite3
 
 from packageviewer.sql_table import SQLTable
+from packageviewer.inserters.inserter import Inserter
 import timer
 
-class PacmanInserter:
+class PacmanInserter(Inserter):
     
     def __init__(self, db_path) -> None:
-        self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path)
+        super().__init__(db_path)
 
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (name, version, repo)
@@ -21,40 +21,6 @@ class PacmanInserter:
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_repo(repo_id INTEGER, name TEXT)
         ''')
     
-    @timer.dec
-    def create_tables(self):
-
-        self.conn.executescript('''
-        CREATE TABLE distro(
-            distro_id INTEGER PRIMARY KEY,
-            name TEXT,
-            version TEXT
-        );
-        CREATE TABLE repo(
-            repo_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            distro_id INTEGER,
-            name TEXT
-        );
-        CREATE TABLE package(
-            package_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            repo_id INTEGER
-        );
-        CREATE TABLE file(
-            package_id INTEGER,
-            dirname_id INTEGER,
-            filename_id INTEGER
-        );
-        CREATE TABLE dirname(
-            dirname_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            dirname
-        );
-        CREATE TABLE filename(
-            filename_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT
-        );
-        ''')
-
     @timer.dec
     def insert_distro(self, distro_name, distro_version):
         cursor = self.conn.execute('''

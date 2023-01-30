@@ -1,13 +1,13 @@
 import sqlite3
 
 from packageviewer.sql_table import SQLTable
+from packageviewer.inserters.inserter import Inserter
 import timer
 
-class AptInserter:
+class AptInserter(Inserter):
     
     def __init__(self, db_path) -> None:
-        self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path)
+        super().__init__(db_path)
 
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (distro_name, distro_version, distro_repo, name, arch, version, others)
@@ -35,45 +35,6 @@ class AptInserter:
         self.insert_file_table()
 
         self.add_indexes()
-
-
-    
-    @timer.dec
-    def create_tables(self):
-
-        STMTS = f'''
-        CREATE TABLE distro(
-            distro_id INTEGER PRIMARY KEY,
-            name TEXT,
-            version TEXT
-        );
-        CREATE TABLE repo(
-            repo_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            distro_id INTEGER,
-            name TEXT
-        );
-        CREATE TABLE package(
-            package_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            repo_id INTEGER
-        );
-        CREATE TABLE file(
-            package_id INTEGER,
-            dirname_id INTEGER,
-            filename_id INTEGER
-        );
-        CREATE TABLE dirname(
-            dirname_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            dirname
-        );
-        CREATE TABLE filename(
-            filename_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT
-        );
-        '''
-
-        for stmt in STMTS.split(";"):
-            self.conn.execute(stmt)
 
     @timer.dec
     def create_tmp_tables(self):

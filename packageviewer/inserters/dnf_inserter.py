@@ -1,14 +1,13 @@
 import sqlite3
 
 from packageviewer.sql_table import SQLTable
+from packageviewer.inserters.inserter import Inserter
 import timer
 
-class DnfInserter:
+class DnfInserter(Inserter):
 
     def __init__(self, db_path) -> None:
-        self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path)
-        print("Opening db "+self.db_path)
+        super().__init__(db_path)
 
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (pkgId, name, version, repo)
@@ -23,41 +22,6 @@ class DnfInserter:
         ''')
 
     
-
-    @timer.dec
-    def create_tables(self):
-
-        self.conn.executescript('''
-        CREATE TABLE distro(
-            distro_id INTEGER PRIMARY KEY,
-            name TEXT,
-            version TEXT
-        );
-        CREATE TABLE repo(
-            repo_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            distro_id INTEGER,
-            name TEXT
-        );
-        CREATE TABLE package(
-            package_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
-            repo_id INTEGER
-        );
-        CREATE TABLE file(
-            package_id INTEGER,
-            dirname_id INTEGER,
-            filename_id INTEGER
-        );
-        CREATE TABLE dirname(
-            dirname_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            dirname
-        );
-        CREATE TABLE filename(
-            filename_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename TEXT
-        );
-        ''')
-
     @timer.dec
     def insert_distro(self, distro_name, distro_version):
         cursor = self.conn.execute('''
@@ -133,6 +97,8 @@ class DnfInserter:
     def normalize(self, distro_name, distro_version):
         self.create_tables()
 
+        self.add_indexes()
+
         self.insert_distro(distro_name, distro_version)
 
         self.insert_repo_table()
@@ -143,5 +109,3 @@ class DnfInserter:
         self.insert_filename_table()
 
         self.insert_file_table()
-
-        self.add_indexes()
