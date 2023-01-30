@@ -32,8 +32,12 @@ if args.reset_db:
 
 print(f"Operation requested : process '{args.distro}/{args.version}'")
 
+path = os.path.join("archives", args.distro)
+if args.version:
+    path + os.path.join(path, args.version)
+
 timer.call(
-    data_manager.process_data_point, args.distro, args.version, f"archives/{args.distro}/{args.version}", args.output_file
+    data_manager.process_data_point, args.distro, args.version, path, args.output_file
 )
 
 print("Finished !")
