@@ -15,7 +15,7 @@ class AptProcessor:
     def process(self):
         self.process_sums()
         self.process_files()
-        self.inserter.normalize()
+        self.inserter.normalize(self.distro_name, self.distro_version)
 
     def process_sums(self):
         sums_list = self.parser.parse_sums()
