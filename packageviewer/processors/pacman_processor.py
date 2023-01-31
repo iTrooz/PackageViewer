@@ -3,11 +3,11 @@ from packageviewer.inserters.pacman_inserter import PacmanInserter
 
 class PacmanProcessor:
 
-    def __init__(self, distro_name, distro_version, dir_path, output_db_path) -> None:
+    def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
         self.distro_name = distro_name
         self.distro_version = distro_version
         self.parser = PacmanParser(distro_name, distro_version, dir_path)
-        self.inserter = PacmanInserter(output_db_path)
+        self.inserter = PacmanInserter(conn)
 
     def process(self):
         sums_data, files_data = self.process_parser()

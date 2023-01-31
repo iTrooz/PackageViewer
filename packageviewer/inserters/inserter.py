@@ -4,10 +4,9 @@ import timer
 
 class Inserter:
     
-    def __init__(self, db_path) -> None:
-        self.db_path = db_path
-        self.conn = sqlite3.connect(self.db_path)
-    
+    def __init__(self, conn) -> None:
+        self.conn = conn
+        
     @timer.dec
     def create_tables(self):
 

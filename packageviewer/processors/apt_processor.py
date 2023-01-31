@@ -5,9 +5,11 @@ from packageviewer.inserters.apt_inserter import AptInserter
 
 class AptProcessor:
 
-    def __init__(self, distro_name, distro_version, dir_path, output_db_path) -> None:
+    def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
+        self.distro_name = distro_name
+        self.distro_version = distro_version
         self.parser = AptParser(distro_name, distro_version, dir_path)
-        self.inserter = AptInserter(output_db_path)
+        self.inserter = AptInserter(conn)
 
 
     def process(self):

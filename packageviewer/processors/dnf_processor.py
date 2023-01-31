@@ -5,11 +5,11 @@ from packageviewer.inserters.dnf_inserter import DnfInserter
 import rpm_vercmp
 class DnfProcessor:
 
-    def __init__(self, distro_name, distro_version, dir_path, output_db_path) -> None:
+    def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
         self.distro_name = distro_name
         self.distro_version = distro_version
         self.parser = DnfParser(distro_name, distro_version, dir_path)
-        self.inserter = DnfInserter(output_db_path)
+        self.inserter = DnfInserter(conn)
 
 
     def process_sums(self):

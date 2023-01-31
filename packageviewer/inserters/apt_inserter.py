@@ -6,8 +6,8 @@ import timer
 
 class AptInserter(Inserter):
     
-    def __init__(self, db_path) -> None:
-        super().__init__(db_path)
+    def __init__(self, conn) -> None:
+        super().__init__(conn)
 
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (distro_name, distro_version, distro_repo, name, arch, version, others)
@@ -33,8 +33,6 @@ class AptInserter(Inserter):
         self.insert_filename_table()
 
         self.insert_file_table()
-
-        self.add_indexes()
 
     @timer.dec
     def create_tmp_tables(self):
@@ -128,13 +126,3 @@ class AptInserter(Inserter):
     def vacuum_db(self):
         self.conn.execute("VACUUM")
         self.conn.commit()
-
-    @timer.dec
-    def add_indexes(self):
-        self.conn.execute('''CREATE INDEX "index-dirname-dirname" ON "dirname" ("dirname")''')
-        self.conn.execute('''CREATE INDEX "index-filename-filename" ON "filename" ("filename")''')
-        self.conn.execute('''CREATE INDEX "index-file-dirname_id" ON "file" ("dirname_id")''')
-        self.conn.execute('''CREATE INDEX "index-file-filename_id" ON "file" ("filename_id")''')
-        self.conn.execute('''CREATE INDEX "index-file-package_id" ON "file" ("package_id")''')
-        self.conn.execute('''CREATE INDEX "index-package-name" ON "package" ("name")''')
-

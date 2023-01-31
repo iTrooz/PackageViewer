@@ -6,8 +6,8 @@ import timer
 
 class DnfInserter(Inserter):
 
-    def __init__(self, db_path) -> None:
-        super().__init__(db_path)
+    def __init__(self, conn) -> None:
+        super().__init__(conn)
 
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (pkgId, name, version, repo)
@@ -84,20 +84,8 @@ class DnfInserter(Inserter):
         ''')
         self.conn.commit()
 
-    @timer.dec
-    def add_indexes(self):
-        self.conn.execute('''CREATE INDEX "index-dirname-dirname" ON "dirname" ("dirname")''')
-        self.conn.execute('''CREATE INDEX "index-filename-filename" ON "filename" ("filename")''')
-        self.conn.execute('''CREATE INDEX "index-file-dirname_id" ON "file" ("dirname_id")''')
-        self.conn.execute('''CREATE INDEX "index-file-filename_id" ON "file" ("filename_id")''')
-        self.conn.execute('''CREATE INDEX "index-file-package_id" ON "file" ("package_id")''')
-        self.conn.execute('''CREATE INDEX "index-package-name" ON "package" ("name")''')
-
-    
     def normalize(self, distro_name, distro_version):
         self.create_tables()
-
-        self.add_indexes()
 
         self.insert_distro(distro_name, distro_version)
 
