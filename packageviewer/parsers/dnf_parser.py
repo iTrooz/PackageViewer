@@ -33,9 +33,17 @@ class DnfParser:
         ''')
 
         for row in cursor:
+
+            pkgId = row[0]
+            dirname = row[1]
+            if dirname[0] == "/":
+                dirname = dirname[1:]
+            else:
+                raise ValueError(f"Directory should start with /, got {dirname}")
+            
             for filename, filetype in zip(row[2].split("/"), row[3]):
                 if filetype == 'f':
-                    yield {"pkgId": row[0], "dirname": row[1], "filename": filename, "repo": repo}
+                    yield {"pkgId": pkgId, "dirname": dirname, "filename": filename, "repo": repo}
         
         conn.close()
 
