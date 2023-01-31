@@ -10,7 +10,7 @@ class AptInserter(Inserter):
         super().__init__(conn)
 
         self.table_tmp_package = SQLTable(conn=self.conn, table_name="tmp_package", create_query='''
-            CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (distro_name, distro_version, distro_repo, name, arch, version, others)
+            CREATE TEMPORARY TABLE IF NOT EXISTS tmp_package (distro_name, distro_version, repo, name, arch, version, others)
         ''')
 
         self.table_tmp_file = SQLTable(conn=self.conn, table_name="tmp_file", create_query='''

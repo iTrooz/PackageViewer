@@ -30,7 +30,7 @@ class AptParser:
             return {
                 "distro_name":self.distro_name,
                 "distro_version":self.distro_version,
-                "distro_repo": repo,
+                "repo": repo,
                 "others":{},
             }
 
