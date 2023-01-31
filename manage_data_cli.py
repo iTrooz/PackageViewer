@@ -86,9 +86,13 @@ class ManageDataCli:
         if force_reset:
             need_init = True
             if os.path.exists(self.args.db):
+                print(f"Warning: Removing database at path {os.path.abspath(self.args.db)}")
                 os.remove(self.args.db)
         else:
             need_init = not os.path.exists(self.args.db)
+            if not os.path.exists(self.args.db):
+                print(f"Warning: Database at path {os.path.abspath(self.args.db)} doesn't exist. It will be created")
+
         
         self.data_manager = DataManager(self.args.db)
         if need_init:
