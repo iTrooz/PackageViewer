@@ -103,6 +103,10 @@ class Inserter:
             JOIN filename ON filename.filename = tmp_file.filename
         ''')
 
+    @timer.dec
+    def commit(self):
+        self.conn.commit()
+
     def normalize(self, distro_name, distro_version):
         self.create_tables()
 
@@ -117,4 +121,4 @@ class Inserter:
 
         self.insert_file_table()
 
-        self.conn.commit()
+        self.commit()
