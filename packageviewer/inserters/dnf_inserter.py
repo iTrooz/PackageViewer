@@ -33,4 +33,3 @@ class DnfInserter(Inserter):
             JOIN filename ON filename.filename = tmp_file.filename
             WHERE tmp_file.repo = tmp_repo.name
         ''')
-        self.conn.commit()

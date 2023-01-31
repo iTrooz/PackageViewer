@@ -45,7 +45,6 @@ class Inserter:
         cursor = self.conn.execute('''
             INSERT INTO distro (name, version) VALUES (?, ?)
         ''', (distro_name, distro_version))
-        self.conn.commit()
         self.cache_distro_id = cursor.lastrowid
 
     @timer.dec
@@ -60,7 +59,6 @@ class Inserter:
             SELECT DISTINCT repo.repo_id, repo.name FROM repo
             JOIN distro ON distro.distro_id = ?
         ''', (self.cache_distro_id,))
-        self.conn.commit()
 
     @timer.dec
     def insert_package_table(self):
@@ -70,7 +68,6 @@ class Inserter:
             JOIN tmp_repo
             ON tmp_repo.name = repo
         ''')
-        self.conn.commit()
 
     @timer.dec
     def insert_dirname_table(self):
@@ -80,7 +77,6 @@ class Inserter:
             LEFT JOIN dirname ON dirname.dirname = tmp_file.dirname
             WHERE dirname.dirname_id is null
         ''')
-        self.conn.commit()
 
     @timer.dec
     def insert_filename_table(self):
@@ -90,7 +86,6 @@ class Inserter:
             LEFT JOIN filename ON filename.filename = tmp_file.filename
             WHERE filename.filename_id is null
         ''')
-        self.conn.commit()
 
     @timer.dec
     def insert_file_table(self):
@@ -107,7 +102,6 @@ class Inserter:
             -- join filename
             JOIN filename ON filename.filename = tmp_file.filename
         ''')
-        self.conn.commit()
 
     def normalize(self, distro_name, distro_version):
         self.create_tables()
@@ -122,3 +116,5 @@ class Inserter:
         self.insert_filename_table()
 
         self.insert_file_table()
+
+        self.conn.commit()
