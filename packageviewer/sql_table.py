@@ -8,7 +8,11 @@ class SQLTable:
         self.conn.execute(create_query)
 
     def add_rows(self, rows: list):
-        first_row = next(iter(rows))
+        first_row = next(iter(rows), None)
+        
+        if first_row == None: # empty iterator
+            return
+
         fields = ", ".join(first_row.keys())
         values = ", ".join("?"*len(first_row))
         sql = f"INSERT INTO {self.table_name} ({fields}) VALUES ({values})"
