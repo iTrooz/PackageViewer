@@ -12,10 +12,7 @@ class PacmanProcessor:
 
     @timer.dec
     def process(self):
-        sums_data, files_data = self.process_parser()
-
-        self.inserter.table_tmp_package.add_rows(sums_data)
-        self.inserter.table_tmp_file.add_rows(files_data)
+        self.process_parser()
 
         self.inserter.normalize(self.distro_name, self.distro_version)
 
@@ -23,13 +20,10 @@ class PacmanProcessor:
     def process_parser(self):
         all_list = self.parser.parse()
         sums_data = []
-        files_data = []
 
         for i in all_list:
             for j in i:
                 sums_data.append(j["sum"])
-                files_data.extend(j["files"])
+                self.inserter.table_tmp_file.add_rows(j["files"])
 
-
-        
-        return sums_data, files_data
+        self.inserter.table_tmp_package.add_rows(sums_data)
