@@ -14,17 +14,6 @@ class AptParser:
         self.distro_version = distro_version
         self.dir_path = dir_path
     
-    def __parse_sum_file_timer__(func):
-        def wrap_func(self, filepath, *args):
-            print(f'Starting parsing summary for {filepath}')
-            start = time()
-            result = func(self, filepath, *args)
-            end = time()
-            print(f'Finished parsing summary for {filepath} ({(end-start):.4f}s)')
-            return result
-        return wrap_func
-
-    @__parse_sum_file_timer__
     def _parse_sum_file_(self, filepath, repo, area):
         def gen_row():
             return {
@@ -63,17 +52,6 @@ class AptParser:
 
         file.close()
 
-    def _parse_files_filetimer__(func):
-        def wrap_func(self, filepath, *args):
-            print(f'Starting parsing files for {filepath}')
-            start = time()
-            result = func(self, filepath, *args)
-            end = time()
-            print(f'Finished parsing files for {filepath} ({(end-start):.4f}s)')
-            return result
-        return wrap_func
-
-    @_parse_files_filetimer__
     def _parse_files_file_(self, filepath, repo):
         file = gzip.open(filepath, "rb")
 
