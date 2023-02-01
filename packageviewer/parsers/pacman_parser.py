@@ -6,7 +6,6 @@ import tempfile
 import itertools
 
 from tqdm import tqdm
-import timer
 
 from packageviewer import utils
 
@@ -63,7 +62,6 @@ class PacmanParser:
                 yield {"package": package_name, "dirname": dirname, "filename": filename}
 
 
-    @timer.dec
     def _parse_file_(self, filepath, repo):
         print("parse sums file "+filepath)
 
@@ -83,8 +81,7 @@ class PacmanParser:
                 files = list(self._parse_files_file_(f, sum["name"]))
                 
             yield {"sum": sum, "files": files}
-        
-    @timer.dec
+
     def parse(self):
         for repo, fullrepo in utils.loop_dirs(self.dir_path):
             yield self._parse_file_(os.path.join(fullrepo, repo+".files.tar.gz"), repo)
