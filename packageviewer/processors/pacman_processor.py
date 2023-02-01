@@ -1,5 +1,6 @@
 from packageviewer.parsers.pacman_parser import PacmanParser
 from packageviewer.inserters.pacman_inserter import PacmanInserter
+import timer
 
 class PacmanProcessor:
 
@@ -9,6 +10,7 @@ class PacmanProcessor:
         self.parser = PacmanParser(distro_name, distro_version, dir_path)
         self.inserter = PacmanInserter(conn)
 
+    @timer.dec
     def process(self):
         sums_data, files_data = self.process_parser()
 
@@ -17,6 +19,7 @@ class PacmanProcessor:
 
         self.inserter.normalize(self.distro_name, self.distro_version)
 
+    @timer.dec
     def process_parser(self):
         all_list = self.parser.parse()
         sums_data = []

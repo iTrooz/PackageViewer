@@ -1,6 +1,7 @@
 
 from packageviewer.parsers.dnf_parser import DnfParser
 from packageviewer.inserters.dnf_inserter import DnfInserter
+import timer
 
 import rpm_vercmp
 class DnfProcessor:
@@ -12,6 +13,7 @@ class DnfProcessor:
         self.inserter = DnfInserter(conn)
 
 
+    @timer.dec
     def process_sums(self):
         sums_list = self.parser.parse_sums()
 
@@ -41,13 +43,14 @@ class DnfProcessor:
 
         self.inserter.table_tmp_package.add_rows(sums_data)
     
+    @timer.dec
     def process_files(self):
         files_list = self.parser.parse_files()
 
         for files_loop in files_list:
             self.inserter.table_tmp_file.add_rows(files_loop)
 
-
+    @timer.dec
     def process(self):
         self.process_sums()
         self.process_files()

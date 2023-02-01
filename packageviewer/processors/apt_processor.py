@@ -13,6 +13,7 @@ class AptProcessor:
         self.inserter = AptInserter(conn)
 
 
+    @timer.dec
     def process(self):
         self.process_sums()
         self.process_files()
