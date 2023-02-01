@@ -12,4 +12,3 @@ class SQLTable:
         
         insert_data = (list(row.values()) for row in rows)
         self.conn.executemany(sql, insert_data)
-        self.conn.commit()
