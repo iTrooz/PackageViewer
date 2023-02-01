@@ -1,9 +1,9 @@
+import rpm_vercmp
 
 from packageviewer.parsers.dnf_parser import DnfParser
 from packageviewer.inserters.dnf_inserter import DnfInserter
 import timer
 
-import rpm_vercmp
 class DnfProcessor:
 
     def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
