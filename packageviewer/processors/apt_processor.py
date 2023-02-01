@@ -2,6 +2,7 @@ from pydpkg import Dpkg
 
 from packageviewer.parsers.apt_parser import AptParser
 from packageviewer.inserters.apt_inserter import AptInserter
+import timer
 
 class AptProcessor:
 
@@ -17,6 +18,7 @@ class AptProcessor:
         self.process_files()
         self.inserter.normalize(self.distro_name, self.distro_version)
 
+    @timer.dec
     def process_sums(self):
         sums_list = self.parser.parse_sums()
 
@@ -45,6 +47,7 @@ class AptProcessor:
 
         self.inserter.table_tmp_package.add_rows(sums_data)
 
+    @timer.dec
     def process_files(self):
         files_list = self.parser.parse_files()
 
