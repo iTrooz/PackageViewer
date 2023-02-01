@@ -1,6 +1,5 @@
 archives
 **/__pycache__
 local/
-*.db
-*.db
-*.db-journal
+**/*.db
+**/*.db-journal
