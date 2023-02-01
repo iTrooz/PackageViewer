@@ -1,6 +1,4 @@
 import os
-import gzip
-import sqlite3
 import tarfile
 import tempfile
 import itertools
