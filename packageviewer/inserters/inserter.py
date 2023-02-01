@@ -96,7 +96,6 @@ class Inserter:
             JOIN package ON package.name = tmp_file.package
             -- filter to keep our packages only
             JOIN tmp_repo ON tmp_repo.repo_id = package.repo_id
-            JOIN distro ON tmp_repo.repo_id = package.repo_id
             -- join dirname
             JOIN dirname ON dirname.dirname = tmp_file.dirname
             -- join filename
