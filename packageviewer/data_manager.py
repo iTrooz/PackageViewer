@@ -6,8 +6,6 @@ from packageviewer.processors.dnf_processor import DnfProcessor
 from packageviewer.processors.pacman_processor import PacmanProcessor
 import timer
 
-from packageviewer.distro_data import DistroData
-
 
 class DataManager:
 

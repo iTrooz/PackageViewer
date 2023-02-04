@@ -4,7 +4,6 @@ from time import time
 
 from tqdm import tqdm
 
-from packageviewer.distro_data import DistroData
 from packageviewer import utils
 
 class AptParser:

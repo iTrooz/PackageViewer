@@ -4,7 +4,6 @@ import os
 import sys
 
 from packageviewer.data_manager import DataManager
-from packageviewer.distro_data import DistroData
 import timer
 
 
