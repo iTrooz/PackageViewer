@@ -14,7 +14,7 @@ class PacmanParser:
         self.distro_version = distro_version
         self.dir_path = dir_path
 
-    def _translate_key_(self, key):
+    def _translate_sum_key_(self, key):
         if key in ("NAME", "VERSION"):
             return key.lower()
         else:
@@ -22,15 +22,19 @@ class PacmanParser:
 
 
     def _parse_desc_file_(self, file, repo):
-        data = {"repo": repo}
+        sum = {"repo": repo}
+        deps = []
         key = None
         value = None
         for line in itertools.chain(file, [""]): # needed to flush last key/value pair
             line = line.strip()
             if len(line) == 0:
-                key = self._translate_key_(key)
-                if key != None:
-                    data[key] = value
+                if key == "DEPENDS":
+                    deps = value if type(value) == list else (value,)
+                else:
+                    key = self._translate_sum_key_(key)
+                    if key != None:
+                        sum[key] = value
                 key = None
                 value = None
             elif key == None:
@@ -45,7 +49,7 @@ class PacmanParser:
                     value.append(line)
                 else:
                     value = [value, line]
-        return data
+        return sum, deps
 
     def _parse_files_file_(self, file, package_name):
         line = next(file).strip()
@@ -73,12 +77,12 @@ class PacmanParser:
         for dir, fulldir in utils.loop_dirs(tmpdir):
 
             with open(os.path.join(fulldir, "desc"), "r") as f:
-                sum = self._parse_desc_file_(f, repo)
+                sum, deps = self._parse_desc_file_(f, repo)
             
             with open(os.path.join(fulldir, "files"), "r") as f:
                 files = list(self._parse_files_file_(f, sum["name"]))
                 
-            yield {"sum": sum, "files": files}
+            yield {"sum": sum, "files": files, "deps": deps}
 
     def parse(self):
         for repo, fullrepo in utils.loop_dirs(self.dir_path):
