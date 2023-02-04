@@ -7,7 +7,6 @@ from packageviewer.processors.pacman_processor import PacmanProcessor
 import timer
 
 from packageviewer.distro_data import DistroData
-import packageviewer.database
 
 
 class DataManager:
