@@ -35,7 +35,7 @@ class PacmanParser:
                 value = None
             elif key == None:
                 if line[0] == "%" and line[-1] == "%":
-                    key = line[1:-1]
+                    key = line[1:-1].upper()
                 else:
                     raise ValueError(f"Expected %key%, got {line}")
             else:
