@@ -26,4 +26,6 @@ class PacmanProcessor:
                 sums_data.append(j["sum"])
                 self.inserter.table_tmp_file.add_rows(j["files"])
 
+        # TODO sort and filter by version
+
         self.inserter.table_tmp_package.add_rows(sums_data)
