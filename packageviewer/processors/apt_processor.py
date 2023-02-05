@@ -4,6 +4,10 @@ from packageviewer.parsers.apt_parser import AptParser
 from packageviewer.inserters.apt_inserter import AptInserter
 import timer
 
+def __first_group__(data, sep):
+    index = data.find(sep)
+    return data if index == -1 else data[:index]
+
 class AptProcessor:
 
     def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
@@ -18,6 +22,17 @@ class AptProcessor:
         self.process_sums()
         self.process_files()
         self.inserter.normalize(self.distro_name, self.distro_version)
+
+    def gen_deps_rows(self, pkg_name, deps):
+        separated_deps = set()
+        for dep_group in deps.split(","):
+            dep_name = __first_group__(dep_group, '|')
+            dep_name = __first_group__(dep_name, '(')
+
+            separated_deps.add(dep_name.strip()) # set so auto-dedup
+        
+        for dep_name in separated_deps:
+            yield {"parent_name": pkg_name, "dep_name": dep_name}
 
     @timer.dec
     def process_sums(self):
@@ -43,10 +58,16 @@ class AptProcessor:
                 current_sum = loop_sum
         sums_data = dedup_sums_data
 
-        for sum in sums_data:
-            sum["others"] = str(sum["others"])
+        for row in sums_data:
+            deps = row.get("depends")
+            if deps:
+                deps_rows = list(self.gen_deps_rows(row["name"], deps))
+                self.inserter.table_tmp_dep.add_rows(deps_rows)
+                del row["depends"]
+                
+            self.inserter.table_tmp_package.add_row(row)
 
-        self.inserter.table_tmp_package.add_rows(sums_data)
+
 
     @timer.dec
     def process_files(self):

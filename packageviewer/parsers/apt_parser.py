@@ -19,7 +19,6 @@ class AptParser:
                 "distro_name":self.distro_name,
                 "distro_version":self.distro_version,
                 "repo": repo,
-                "others":{},
             }
 
         row = gen_row()
@@ -46,8 +45,8 @@ class AptParser:
                     row["arch"] = value
                 case "Version":
                     row["version"] = value
-                case _:
-                    row["others"][key] = value
+                case "Depends":
+                    row["depends"] = value
 
         file.close()
 
