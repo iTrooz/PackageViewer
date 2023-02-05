@@ -25,6 +25,10 @@ class Inserter:
             name TEXT,
             repo_id INTEGER
         );
+        CREATE TABLE IF NOT EXISTS pkgdep(
+            parent_pkg_id INTEGER,
+            dep_pkg_id INTEGER
+        );
         CREATE TABLE IF NOT EXISTS file(
             package_id INTEGER,
             dirname_id INTEGER,
@@ -67,6 +71,15 @@ class Inserter:
             SELECT tmp_package.name, tmp_repo.repo_id FROM tmp_package
             JOIN tmp_repo
             ON tmp_repo.name = repo
+        ''')
+
+    @timer.dec
+    def insert_pkgdep_table(self):
+        self.conn.execute('''
+            INSERT INTO pkgdep (parent_pkg_id, dep_pkg_id)
+            SELECT parent_pkg.package_id, dep_pkg.package_id FROM tmp_pkgdep
+            JOIN package parent_pkg ON parent_pkg.name = tmp_pkgdep.parent_name
+            JOIN package dep_pkg ON dep_pkg.name = tmp_pkgdep.dep_name
         ''')
 
     @timer.dec
@@ -114,6 +127,8 @@ class Inserter:
         self.insert_repo_table()
 
         self.insert_package_table()
+
+        self.insert_pkgdep_table()
 
         self.insert_dirname_table()
         self.insert_filename_table()
