@@ -1,3 +1,5 @@
+import itertools
+
 import rpm_vercmp
 
 from packageviewer.parsers.dnf_parser import DnfParser
@@ -42,6 +44,11 @@ class DnfProcessor:
         sums_data = dedup_sums_data
 
         self.inserter.table_tmp_package.add_rows(sums_data)
+
+    @timer.dec
+    def process_deps(self):
+        deps = itertools.chain(*self.parser.parse_deps())
+        self.inserter.table_tmp_dep.add_rows(deps)
     
     @timer.dec
     def process_files(self):
@@ -53,5 +60,6 @@ class DnfProcessor:
     @timer.dec
     def process(self):
         self.process_sums()
+        self.process_deps()
         self.process_files()
         self.inserter.normalize(self.distro_name, self.distro_version)

@@ -47,6 +47,17 @@ class DnfParser:
         conn.close()
 
 
+    def _parse_deps_(self, filepath, repo):
+        conn = sqlite3.connect(filepath)
+
+        cursor = conn.execute('''
+            SELECT packages.name, requires.name FROM requires
+            JOIN packages ON packages.pkgKey = requires.pkgKey
+        ''')
+        for row in cursor.fetchall():
+            yield {"parent_name": row[0], "dep_name": row[1]}
+
+
     def parse_sums(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
             yield self._parse_sum_file_(os.path.join(full_repo, "primary.sqlite"), repo)
@@ -54,3 +65,7 @@ class DnfParser:
     def parse_files(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
             yield self._parse_files_file_(os.path.join(full_repo, "filelists.sqlite"), repo)
+
+    def parse_deps(self):
+        for repo, full_repo in utils.loop_dirs(self.dir_path):
+            yield self._parse_deps_(os.path.join(full_repo, "primary.sqlite"), repo)
