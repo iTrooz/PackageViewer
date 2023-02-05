@@ -19,12 +19,13 @@ class SQLTable:
 
 
     def add_rows(self, rows): # 'rows' is iterable of dict
-        first_row = next(iter(rows), None)
+        iterator = iter(rows)
+        first_row = next(iterator, None)
         
         if first_row == None: # empty iterator
             return
 
         sql = self._get_sql_query_(first_row.keys())
 
-        insert_data = (list(row.values()) for row in itertools.chain((first_row,), rows))
+        insert_data = (list(row.values()) for row in itertools.chain((first_row,), iterator))
         self.conn.executemany(sql, insert_data)
