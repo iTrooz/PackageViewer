@@ -61,7 +61,8 @@ class Inserter:
         self.conn.execute('''
             INSERT INTO tmp_repo(repo_id, name)
             SELECT DISTINCT repo.repo_id, repo.name FROM repo
-            JOIN distro ON distro.distro_id = ?
+            JOIN distro ON distro.distro_id = repo.distro_id
+            WHERE distro.distro_id = ?
         ''', (self.cache_distro_id,))
 
     @timer.dec
