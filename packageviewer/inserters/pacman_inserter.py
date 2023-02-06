@@ -21,6 +21,6 @@ class PacmanInserter(Inserter):
             CREATE TEMPORARY TABLE IF NOT EXISTS tmp_repo(repo_id INTEGER, name TEXT)
         ''')
 
-        self.table_tmp_pkgdep = SQLTable(conn=self.conn, table_name="tmp_pkgdep", create_query='''
-            CREATE TABLE IF NOT EXISTS tmp_pkgdep(parent_name, dep_name)
+        self.table_tmp_dep = SQLTable(conn=self.conn, table_name="tmp_dep", create_query='''
+            CREATE TABLE IF NOT EXISTS tmp_dep(parent_name, dep_name)
         ''')

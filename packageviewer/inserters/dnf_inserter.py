@@ -37,16 +37,3 @@ class DnfInserter(Inserter):
             JOIN filename ON filename.filename = tmp_file.filename
             WHERE tmp_file.repo = tmp_repo.name
         ''')
-
-    @timer.dec
-    def insert_pkgdep_table(self):
-        self.conn.execute('''
-            INSERT INTO pkgdep (parent_pkg_id, dep_pkg_id)
-            SELECT parent_pkg.package_id, dep_pkg.package_id FROM tmp_dep
-            -- join package
-            JOIN package parent_pkg ON parent_pkg.name = tmp_dep.parent_name
-            JOIN package dep_pkg ON dep_pkg.name = tmp_dep.dep_name
-            -- filter to keep our packages only
-            JOIN tmp_repo tmp_repo_a ON tmp_repo_a.repo_id = parent_pkg.repo_id
-            JOIN tmp_repo tmp_repo_b ON tmp_repo_b.repo_id = dep_pkg.repo_id
-        ''')

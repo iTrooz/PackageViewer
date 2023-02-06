@@ -10,14 +10,14 @@ class PacmanProcessor:
         self.parser = PacmanParser(distro_name, distro_version, dir_path)
         self.inserter = PacmanInserter(conn)
 
-    def _is_filedep_(self, depname):
-        i = depname.find(".so")
-        if i == -1:
-            return False
-        if len(depname) > i+3:
-            return depname[i+3] in ('=', '<', '>')
-        else:
-            return True
+    # def _is_filedep_(self, depname):
+    #     i = depname.find(".so")
+    #     if i == -1:
+    #         return False
+    #     if len(depname) > i+3:
+    #         return depname[i+3] in ('=', '<', '>')
+    #     else:
+    #         return True
 
     @timer.dec
     def process(self):
@@ -36,8 +36,8 @@ class PacmanProcessor:
                 sums_data.append(sum)
                 self.inserter.table_tmp_file.add_rows(j["files"])
                 for row in ({"parent_name": sum["name"], "dep_name": dep_name} for dep_name in j["deps"]):
-                    if not self._is_filedep_(row["dep_name"]):
-                        self.inserter.table_tmp_pkgdep.add_row(row)
+                    self.inserter.table_tmp_dep.add_row(row)
+                    # if not self._is_filedep_(row["dep_name"]):
 
         # TODO sort and filter by version
 
