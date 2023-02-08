@@ -3,3 +3,4 @@ archives
 local/
 **/*.db
 **/*.db-journal
+test.py
