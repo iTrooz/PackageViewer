@@ -98,7 +98,10 @@ class DataDownloader:
         for result in results:
             if result.ok:
                 size = int(result.headers["Content-Length"])
-                # print(f"{result.url} : {bytes_to_mib(size)}MiB")
+                
+                mib = bytes_to_mib(size)
+                if mib > 5:
+                    print(f"Big request: {result.url} : {mib}MiB")
 
                 total += size
             else:
