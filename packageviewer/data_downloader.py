@@ -14,7 +14,8 @@ class RepoData:
 
     def process_archive_url(self):
         for key, value in self.md.items():
-            self.archive_url = self.archive_url.replace("$"+key, value)
+            if type(value) == str:
+                self.archive_url = self.archive_url.replace("$"+key, value)
 
         if "$" in self.archive_url:
             print("Warning: found unprocessed variable in archive url "+self.archive_url)
@@ -40,6 +41,7 @@ class DataDownloader:
                 url_md["pm_type"] = dist_obj["pm_type"]
                 url_md["repo"] = repo_name
                 url_md["distro"] = distro_name
+                url_md["subrepos"] = repo_obj.get("subrepos") # Only apt-based dists have this
 
                 archive_url = repo_obj.get("archive") or distro_archive_url
 
@@ -49,21 +51,35 @@ class DataDownloader:
 
     def _get_files(self, repos):
         for repo in repos:
-            url = None
+
+            base_uri = os.path.join('archives',
+                repo.md["distro"],
+                repo.md.get("version_id") or "DEFVERSION",
+                repo.md.get("repo") or "DEFREPO",
+            )
+
             match repo.md["pm_type"]:
                 case "apt":
-                    url = f'{repo.archive_url}/Contents-amd64.gz'
+                    yield [
+                        os.path.join(repo.archive_url, 'Contents-amd64.gz'),
+                        os.path.join(base_uri, 'Contents-amd64.gz')
+                    ]
+                    for subrepo in repo.md["subrepos"]:
+                        yield [
+                            os.path.join(repo.archive_url, subrepo, 'binary-amd64', 'Packages.gz'),
+                            os.path.join(base_uri, subrepo, 'Contents-amd64.gz')
+                        ]
+
                 case "dnf":
-                    url = f'{repo.archive_url}/repodata/repomd.xml'
+                    yield [
+                        os.path.join(repo.archive_url, 'repodata/repomd.xml'),
+                        os.path.join(base_uri, 'repomd.xml')
+                    ]
                 case "pacman":
-                    url = f'{repo.archive_url}/{repo.md["repo"]}.db'
-            
-            yield [url, os.path.join('archives',
-                    repo.md["distro"],
-                    repo.md.get("version_id") or "DEFVERSION",
-                    repo.md.get("repo") or "DEFREPO",
-                    os.path.basename(url)
-                )]
+                    yield [
+                        os.path.join(repo.archive_url, f'{repo.md["repo"]}.db'),
+                        os.path.join(base_uri, f'{repo.md["repo"]}.db')
+                    ]
 
     async def process(self):
         repos = itertools.chain(*self._get_repos())
@@ -82,7 +98,7 @@ class DataDownloader:
         for result in results:
             if result.ok:
                 size = int(result.headers["Content-Length"])
-                print(f"{result.url} : {bytes_to_mib(size)}MiB")
+                # print(f"{result.url} : {bytes_to_mib(size)}MiB")
 
                 total += size
             else:
