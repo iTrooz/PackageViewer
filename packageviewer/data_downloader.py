@@ -5,7 +5,7 @@ import asyncio
 import aiohttp
 
 def bytes_to_mib(bytes_n):
-    return round(bytes_n/(8*1024*1024), 2)
+    return round(bytes_n/(1024*1024), 2)
 
 class RepoData:
     def __init__(self, archive_url, md) -> None:
