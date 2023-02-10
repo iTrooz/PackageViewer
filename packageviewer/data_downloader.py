@@ -4,6 +4,7 @@ import itertools
 import asyncio
 import aiohttp
 import aiofiles
+import tqdm
 
 def bytes_to_mib(bytes_n):
     return round(bytes_n/(1024*1024), 2)
@@ -107,17 +108,27 @@ class DataDownloader:
         
         return total
         
-    async def _download_single_file(self, session, url, file):
+    async def _download_single_file(self, bar, session, url, file):
+        MAX_CHUNK_SIZE = 2**16
+
         resp = await session.get(url)
 
+        size = int(resp.headers["Content-Length"])
+        bar.total += size
+
         async with aiofiles.open(file, "+wb") as f:
-            await f.write(await resp.read())
+            async for chunk in resp.content.iter_chunked(MAX_CHUNK_SIZE):
+                await f.write(chunk)
+                bar.update(len(chunk))
 
     async def _download_files(self, files):
         # Create directory structure in advance
         for url, file in files:
             os.makedirs(os.path.dirname(file), exist_ok=True)
         
+        # Prepare progress bar
+        bar = tqdm.tqdm(total=0, unit='iB', unit_scale=True, unit_divisor=1024)
+
         # download files    
         async with aiohttp.ClientSession() as session:
             tasks = []
@@ -126,8 +137,8 @@ class DataDownloader:
                     if input(f"Something exists at location {file}. Do you want to overwrite it ?") == 'n':
                         print("Skipping")
                         continue
-                tasks.append(self._download_single_file(session, url, file))
-        
+                tasks.append(self._download_single_file(bar=bar, session=session, url=url, file=file))
+
             await asyncio.gather(*tasks)
         
 
