@@ -130,7 +130,7 @@ class DataDownloader:
         bar = tqdm.tqdm(total=0, unit='iB', unit_scale=True, unit_divisor=1024)
 
         # download files    
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=5)) as session:
             tasks = []
             for url, file in files:
                 if os.path.exists(file):
