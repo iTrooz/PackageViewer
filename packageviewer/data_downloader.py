@@ -3,10 +3,10 @@ import os
 import itertools
 import asyncio
 import aiohttp
+import aiofiles
 
 def bytes_to_mib(bytes_n):
     return round(bytes_n/(1024*1024), 2)
-
 class RepoData:
     def __init__(self, archive_url, md) -> None:
         self.archive_url = archive_url
@@ -81,12 +81,8 @@ class DataDownloader:
                         os.path.join(base_uri, f'{repo.md["repo"]}.db')
                     ]
 
-    async def process(self):
-        repos = itertools.chain(*self._get_repos())
-        files = list(self._get_files(repos))
-        
-        print(f"Files to download: {len(files)}")
-        
+    async def _query_download_size(self, files):
+
         client = aiohttp.ClientSession()
         tasks = []
         for url, file in files:
@@ -107,14 +103,45 @@ class DataDownloader:
             else:
                 print(f"Warning: request {result.url} returned HTTP code {result.status}")
 
-        mib_total = bytes_to_mib(total)
+        await client.close()
+        
+        return total
+        
+    async def _download_single_file(self, session, url, file):
+        resp = await session.get(url)
+
+        async with aiofiles.open(file, "+wb") as f:
+            await f.write(await resp.read())
+
+    async def _download_files(self, files):
+        # Create directory structure in advance
+        for url, file in files:
+            os.makedirs(os.path.dirname(file), exist_ok=True)
+        
+        # download files    
+        async with aiohttp.ClientSession() as session:
+            tasks = []
+            for url, file in files:
+                if os.path.exists(file):
+                    if input(f"Something exists at location {file}. Do you want to overwrite it ?") == 'n':
+                        print("Skipping")
+                        continue
+                tasks.append(self._download_single_file(session, url, file))
+        
+            await asyncio.gather(*tasks)
+        
+
+    async def process(self):
+        repos = itertools.chain(*self._get_repos())
+        files = list(self._get_files(repos))
+        
+        print(f"Files to download: {len(files)}")
+
+        mib_total = bytes_to_mib(await self._query_download_size(files))
         print(f'Total to download: {mib_total}MiB')
 
-        await client.close()
+        await self._download_files(files)
 
-        
-
-        
         
     def _get_repos(self):
         f = yaml.safe_load(open(self.conf_filepath))
