@@ -55,7 +55,7 @@ class DataManagerCli:
         self.do_action_add()
 
     def do_action_add(self):
-        print(f"Operation requested : process '{self.args.distro}/{self.args.version}'")
+        print(f"Operation requested : process '{self.args.distro}/{self.args.version}' to database '{self.args.db}'")
 
         self.init_data_manager(self.args.reset_db)
 
@@ -77,6 +77,8 @@ class DataManagerCli:
         self.do_action_add_indexes()
 
     def do_action_add_indexes(self):
+        print(f"Operation requested : add indexes to database '{self.args.db}'")
+        
         self.init_data_manager()
 
         self.data_manager.add_indexes()
