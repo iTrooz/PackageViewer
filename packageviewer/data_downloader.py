@@ -28,8 +28,10 @@ class RepoData:
         return self.__str__()
 
 class DataDownloader:
-    def __init__(self, conf_filepath) -> None:
-        self.conf_filepath = conf_filepath
+    def __init__(self, config_path, output_dir, force) -> None:
+        self.config_path = config_path
+        self.output_dir = output_dir
+        self.force = force
 
     def _get_dist_repos(self, distro_name, dist_obj):
         distro_archive_url = dist_obj.get("archive")
@@ -82,11 +84,11 @@ class DataDownloader:
                         os.path.join(base_uri, f'{repo.md["repo"]}.db')
                     ]
 
-    async def _query_download_size(self, files):
+    async def query_download_size(self):
 
         client = aiohttp.ClientSession()
         tasks = []
-        for url, file in files:
+        for url, file in self.files:
             task = client.head(url, allow_redirects=True)
             tasks.append(task)
         
@@ -105,6 +107,8 @@ class DataDownloader:
                 print(f"Warning: request {result.url} returned HTTP code {result.status}")
 
         await client.close()
+
+        self.total_download_size = total
         
         return total
         
@@ -113,49 +117,49 @@ class DataDownloader:
 
         resp = await session.get(url)
 
-        size = int(resp.headers["Content-Length"])
-        bar.total += size
+        
+        # if not set, try to calculate it ourselves, but it won't be directly accurate, see warning message
+        if not self.total_download_size:
+            size = int(resp.headers["Content-Length"])
+            bar.total += size
 
         async with aiofiles.open(file, "+wb") as f:
             async for chunk in resp.content.iter_chunked(MAX_CHUNK_SIZE):
                 await f.write(chunk)
                 bar.update(len(chunk))
 
-    async def _download_files(self, files):
+    async def download_files(self):
         # Create directory structure in advance
-        for url, file in files:
+        for url, file in self.files:
             os.makedirs(os.path.dirname(file), exist_ok=True)
         
         # Prepare progress bar
         bar = tqdm.tqdm(total=0, unit='iB', unit_scale=True, unit_divisor=1024)
+        if self.total_download_size:
+            bar.total = self.total_download_size
+        else:
+            print("query_download_size() not called. Total download size will not be accurate until all requests have been made (5 concurrently)")
 
         # download files    
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=5)) as session:
             tasks = []
-            for url, file in files:
+            for url, file in self.files:
                 if os.path.exists(file):
-                    if input(f"Something exists at location {file}. Do you want to overwrite it ?") == 'n':
-                        print("Skipping")
+                    if self.force or input(f"Something exists at location {file}. Do you want to overwrite it ?") == 'n':
+                        print(f"Skipping {file}")
                         continue
                 tasks.append(self._download_single_file(bar=bar, session=session, url=url, file=file))
 
             await asyncio.gather(*tasks)
         
 
-    async def process(self):
+    def init(self):
         repos = itertools.chain(*self._get_repos())
-        files = list(self._get_files(repos))
-        
-        print(f"Files to download: {len(files)}")
-
-        mib_total = bytes_to_mib(await self._query_download_size(files))
-        print(f'Total to download: {mib_total}MiB')
-
-        await self._download_files(files)
+        self.files = list(self._get_files(repos))
 
         
     def _get_repos(self):
-        f = yaml.safe_load(open(self.conf_filepath))
+        f = yaml.safe_load(open(self.config_path))
         
         for dist_name, obj in f.get("dists").items():
             yield self._get_dist_repos(dist_name, obj)
