@@ -7,7 +7,7 @@ from packageviewer.data_manager import DataManager
 import timer
 
 
-class ManageDataCli:
+class DataManagerCli:
 
     def __init__(self, argv):
         self.argv = argv
@@ -15,7 +15,7 @@ class ManageDataCli:
 
     def get_parser(self, action=""):
         return argparse.ArgumentParser(
-            prog = f"processdata {action}".strip(),
+            prog = f"data_manager_cli {action}".strip(),
             description = "Process data",
             epilog=f"script version {self.SCRIPT_VERSION}",
         )
@@ -99,5 +99,5 @@ class ManageDataCli:
             self.data_manager.create_tables()
 
 
-cli = ManageDataCli(sys.argv)
+cli = DataManagerCli(sys.argv)
 cli.run()
