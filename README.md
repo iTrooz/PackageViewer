@@ -23,3 +23,6 @@ The archive formats currently supported are the ones used by apt, dnf and pacman
 - "On which distributions does this package exist ? Where is it the most recent ?"
 - "What is the dependency graph of this package ?"
 - Helps to match packages functionnalities match across distributions when they are not 1:1 ?
+
+# Licence
+The licence **for the scripts** is GPL-2-or-later
