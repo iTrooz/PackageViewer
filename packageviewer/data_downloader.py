@@ -47,7 +47,7 @@ class DataDownloader:
                 url_md["pm_type"] = dist_obj["pm_type"]
                 url_md["repo"] = repo_name
                 url_md["distro"] = distro_name
-                url_md["subrepos"] = repo_obj.get("subrepos") # Only apt-based dists have this
+                url_md["areas"] = repo_obj.get("areas") # Only apt-based dists have this
 
                 archive_url = repo_obj.get("archive") or distro_archive_url
 
@@ -70,10 +70,10 @@ class DataDownloader:
                         os.path.join(repo.archive_url, 'Contents-amd64.gz'),
                         os.path.join(base_uri, 'Contents-amd64.gz')
                     ]
-                    for subrepo in repo.md["subrepos"]:
+                    for area in repo.md["areas"]:
                         yield [
-                            os.path.join(repo.archive_url, subrepo, 'binary-amd64', 'Packages.gz'),
-                            os.path.join(base_uri, subrepo, 'Packages.gz')
+                            os.path.join(repo.archive_url, area, 'binary-amd64', 'Packages.gz'),
+                            os.path.join(base_uri, area, 'Packages.gz')
                         ]
 
                 case "dnf":

@@ -11,19 +11,19 @@ dists:
       repos:
         DEFREPO:
           archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name/"
-          subrepos: ["main", "universe", "multiverse", "restricted"]
+          areas: ["main", "universe", "multiverse", "restricted"]
         updates:
           archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name-updates/"
-          subrepos: ["main", "universe", "multiverse", "restricted"]
+          areas: ["main", "universe", "multiverse", "restricted"]
         security:
           archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name-security/"
-          subrepos: ["main", "universe", "multiverse", "restricted"]
+          areas: ["main", "universe", "multiverse", "restricted"]
         backports:
           archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name-backports/"
-          subrepos: ["main", "universe", "multiverse", "restricted"]
+          areas: ["main", "universe", "multiverse", "restricted"]
         vscode:
           archive: "https://packages.microsoft.com/repos/vscode/dists/stable/"
-          subrepos: ["main"]
+          areas: ["main"]
 
     fedora:
       pm_type: "dnf"
