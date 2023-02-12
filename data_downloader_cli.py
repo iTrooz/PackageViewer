@@ -4,6 +4,7 @@ import shutil
 import os
 
 from packageviewer.data_downloader import DataDownloader, bytes_to_mib
+from packageviewer.utils import ask
 
 
 class DataDownloaderCli:
@@ -50,6 +51,9 @@ class DataDownloaderCli:
         print("Querying download size..")
         mib_total = bytes_to_mib(await self.dd.query_download_size())
         print(f'Total to download: {mib_total}MiB')
+
+        if not self.args.force and ask("Do you want to continue ?", 'y') == 'n':
+            return
         
         if self.args.preview: # Only preview
             return
