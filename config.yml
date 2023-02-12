@@ -10,16 +10,16 @@ dists:
           version_name: "focal"
       repos:
         DEFREPO:
-          archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name/"
+          archive: "http://archive.ubuntu.com/ubuntu/dists/$version_name/"
           areas: ["main", "universe", "multiverse", "restricted"]
         updates:
-          archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name-updates/"
+          archive: "http://archive.ubuntu.com/ubuntu/dists/$version_name-updates/"
           areas: ["main", "universe", "multiverse", "restricted"]
         security:
-          archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name-security/"
+          archive: "http://archive.ubuntu.com/ubuntu/dists/$version_name-security/"
           areas: ["main", "universe", "multiverse", "restricted"]
         backports:
-          archive: "https://mirrors.edge.kernel.org/ubuntu/dists/$version_name-backports/"
+          archive: "http://archive.ubuntu.com/ubuntu/dists/$version_name-backports/"
           areas: ["main", "universe", "multiverse", "restricted"]
         vscode:
           archive: "https://packages.microsoft.com/repos/vscode/dists/stable/"
