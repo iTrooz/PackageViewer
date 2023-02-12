@@ -120,6 +120,9 @@ class DataDownloader:
 
         resp = await session.get(url)
 
+        if not resp.ok:
+            print(f"Warning: request {resp.url} returned HTTP code {resp.status}")
+            return
         
         # if not set, try to calculate it ourselves, but it won't be directly accurate, see warning message
         if not self.total_download_size:
