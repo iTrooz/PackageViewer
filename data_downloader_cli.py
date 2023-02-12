@@ -47,6 +47,7 @@ class DataDownloaderCli:
 
         print(f"Number of files to download: {len(self.dd.files)}")
 
+        print("Querying download size..")
         mib_total = bytes_to_mib(await self.dd.query_download_size())
         print(f'Total to download: {mib_total}MiB')
         
