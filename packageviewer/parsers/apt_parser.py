@@ -51,6 +51,10 @@ class AptParser:
         file.close()
 
     def _parse_files_file_(self, filepath, repo):
+        if not os.path.exists(filepath):
+            print(f"Warning: file {filepath} Doesn't exist. Skipping")
+            return
+        
         file = gzip.open(filepath, "rb")
 
         for line in tqdm(file):
