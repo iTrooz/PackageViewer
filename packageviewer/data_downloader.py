@@ -7,6 +7,8 @@ import aiohttp
 import aiofiles
 import tqdm
 
+from packageviewer.utils import ask
+
 def bytes_to_mib(bytes_n):
     return round(bytes_n/(1024*1024), 2)
 class RepoData:
@@ -146,7 +148,7 @@ class DataDownloader:
             tasks = []
             for url, file in self.files:
                 if os.path.exists(file):
-                    if self.force or input(f"Something exists at location {file}. Do you want to overwrite it ?") == 'n':
+                    if self.force or ask(f"Something exists at location {file}. Do you want to overwrite it ?", 'n') == 'n':
                         print(f"Skipping {file}")
                         continue
                 tasks.append(self._download_single_file(bar=bar, session=session, url=url, file=file))
