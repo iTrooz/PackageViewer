@@ -1,6 +1,6 @@
 # PackageViewer database
 
-This repository contains scripts to create and manage a database of package metadata across Linux ditributions.
+This repository contains scripts to create and manage a SQLite database of package metadata across Linux ditributions.
 
 # What is this ?
 
