@@ -73,7 +73,7 @@ class DataDownloader:
                     for subrepo in repo.md["subrepos"]:
                         yield [
                             os.path.join(repo.archive_url, subrepo, 'binary-amd64', 'Packages.gz'),
-                            os.path.join(base_uri, subrepo, 'Contents-amd64.gz')
+                            os.path.join(base_uri, subrepo, 'Packages.gz')
                         ]
 
                 case "dnf":
