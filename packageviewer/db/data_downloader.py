@@ -30,6 +30,18 @@ class RepoData:
     def __repr__(self):
         return self.__str__()
 
+class FileData:
+    def __init__(self, repodata, url, file) -> None:
+        self.repodata = repodata
+        self.url = url
+        self.file = file
+
+    def __str__(self):
+        return f"FileData[RepoData={self.repodata}, url={self.url}, file={self.file}]"
+
+    def __repr__(self):
+        return self.__str__()
+
 class DataDownloader:
     def __init__(self, config_path, output_dir, force) -> None:
         self.config_path = config_path
@@ -66,33 +78,37 @@ class DataDownloader:
 
             match repo.md["pm_type"]:
                 case "apt":
-                    yield [
+                    yield FileData(
+                        repo,
                         os.path.join(repo.archive_url, 'Contents-amd64.gz'),
                         os.path.join(base_uri, 'Contents-amd64.gz')
-                    ]
+                    )
                     for area in repo.md["areas"]:
-                        yield [
+                        yield FileData(
+                            repo,
                             os.path.join(repo.archive_url, area, 'binary-amd64', 'Packages.gz'),
                             os.path.join(base_uri, area, 'Packages.gz')
-                        ]
+                        )
 
                 case "dnf":
-                    yield [
+                    yield FileData(
+                        repo,
                         os.path.join(repo.archive_url, 'repodata/repomd.xml'),
                         os.path.join(base_uri, 'repomd.xml')
-                    ]
+                    )
                 case "pacman":
-                    yield [
+                    yield FileData(
+                        repo,
                         os.path.join(repo.archive_url, f'{repo.md["repo"]}.db'),
                         os.path.join(base_uri, f'{repo.md["repo"]}.db')
-                    ]
+                    )
 
     async def query_download_size(self):
 
         client = aiohttp.ClientSession()
         tasks = []
-        for url, file in self.files:
-            task = client.head(url, allow_redirects=True)
+        for filedata in self.files:
+            task = client.head(filedata.url, allow_redirects=True)
             tasks.append(task)
         
         total = 0
@@ -136,8 +152,8 @@ class DataDownloader:
 
     async def download_files(self):
         # Create directory structure in advance
-        for url, file in self.files:
-            os.makedirs(os.path.dirname(file), exist_ok=True)
+        for filedata in self.files:
+            os.makedirs(os.path.dirname(filedata.file), exist_ok=True)
         
         # Prepare progress bar
         bar = tqdm.tqdm(total=0, unit='iB', unit_scale=True, unit_divisor=1024)
@@ -149,14 +165,25 @@ class DataDownloader:
         # download files    
         async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=5)) as session:
             tasks = []
-            for url, file in self.files:
-                if os.path.exists(file):
-                    if self.force or ask(f"Something exists at location {file}. Do you want to overwrite it ?", 'n') == 'n':
-                        print(f"Skipping {file}")
+            for filedata in self.files:
+                if os.path.exists(filedata.file):
+                    if self.force or ask(f"Something exists at location {filedata.file}. Do you want to overwrite it ?", 'n') == 'n':
+                        print(f"Skipping {filedata.file}")
                         continue
-                tasks.append(self._download_single_file(bar=bar, session=session, url=url, file=file))
+                tasks.append(self._download_single_file(bar=bar, session=session, url=filedata.url, file=filedata.file))
 
             await asyncio.gather(*tasks)
+
+    def filter(self, distro_name=None, distro_version=None):
+
+        def __filter_file(filedata):
+            if distro_name and distro_name != filedata.repodata.md.get("distro"):
+                return False
+            if distro_version and distro_version != filedata.repodata.md.get("version_id"):
+                return False
+            return True
+
+        self.files = list(filter(__filter_file, self.files))
         
 
     def init(self):

@@ -32,6 +32,9 @@ class DataDownloaderCli:
         parser.add_argument("--clear", default=False, action="store_true",
             help = "Clear the output directory before downloading")
 
+        parser.add_argument("--filter", required=False,
+            help = "Filter to only download some files. Syntax: distro/version/content . e.g: ubuntu/22.04")
+
         parser.add_argument("--force", "-f", default=False, action="store_true",
             help = "Do not ask for confirmation to overwrite files")
 
@@ -47,6 +50,20 @@ class DataDownloaderCli:
         
         self.dd = DataDownloader(self.args.config, self.args.output_dir, self.args.force)
         self.dd.init()
+
+        if self.args.filter:
+            print(f"Applying filter {self.args.filter}")
+            split = self.args.filter.split("/")
+            distro_version = None
+            if len(split) == 1:
+                distro_name = split[0]
+                distro_version = None
+            elif len(split) == 2:
+                distro_name, distro_version = split
+            else:
+                raise ValueError("Invalid filter")
+
+            self.dd.filter(distro_name, distro_version)
 
         print(f"Number of files to download: {len(self.dd.files)}")
 
