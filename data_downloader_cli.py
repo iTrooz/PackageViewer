@@ -5,8 +5,8 @@ import argparse
 import shutil
 import os
 
-from packageviewer.data_downloader import DataDownloader, bytes_to_mib
-from packageviewer.utils import ask
+from packageviewer.db.data_downloader import DataDownloader, bytes_to_mib
+from packageviewer.db.utils import ask
 
 
 class DataDownloaderCli:

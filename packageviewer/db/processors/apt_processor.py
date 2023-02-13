@@ -1,7 +1,7 @@
 from pydpkg import Dpkg
 
-from packageviewer.parsers.apt_parser import AptParser
-from packageviewer.inserters.apt_inserter import AptInserter
+from packageviewer.db.parsers.apt_parser import AptParser
+from packageviewer.db.inserters.apt_inserter import AptInserter
 import timer
 
 def __first_group__(data, sep):

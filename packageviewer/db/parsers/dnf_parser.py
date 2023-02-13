@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from packageviewer import utils
+from packageviewer.db import utils
 
 class DnfParser:
 

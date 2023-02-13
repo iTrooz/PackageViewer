@@ -2,8 +2,8 @@ import itertools
 
 import rpm_vercmp
 
-from packageviewer.parsers.dnf_parser import DnfParser
-from packageviewer.inserters.dnf_inserter import DnfInserter
+from packageviewer.db.parsers.dnf_parser import DnfParser
+from packageviewer.db.inserters.dnf_inserter import DnfInserter
 import timer
 
 class DnfProcessor:

@@ -7,7 +7,7 @@ import aiohttp
 import aiofiles
 import tqdm
 
-from packageviewer.utils import ask
+from packageviewer.db.utils import ask
 
 def bytes_to_mib(bytes_n):
     return round(bytes_n/(1024*1024), 2)

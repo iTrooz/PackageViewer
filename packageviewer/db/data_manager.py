@@ -1,9 +1,9 @@
 import os
 import sqlite3
 
-from packageviewer.processors.apt_processor import AptProcessor
-from packageviewer.processors.dnf_processor import DnfProcessor
-from packageviewer.processors.pacman_processor import PacmanProcessor
+from packageviewer.db.processors.apt_processor import AptProcessor
+from packageviewer.db.processors.dnf_processor import DnfProcessor
+from packageviewer.db.processors.pacman_processor import PacmanProcessor
 import timer
 
 

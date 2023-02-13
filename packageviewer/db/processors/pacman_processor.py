@@ -1,5 +1,5 @@
-from packageviewer.parsers.pacman_parser import PacmanParser
-from packageviewer.inserters.pacman_inserter import PacmanInserter
+from packageviewer.db.parsers.pacman_parser import PacmanParser
+from packageviewer.db.inserters.pacman_inserter import PacmanInserter
 import timer
 
 class PacmanProcessor:

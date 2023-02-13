@@ -4,7 +4,7 @@ from time import time
 
 from tqdm import tqdm
 
-from packageviewer import utils
+from packageviewer.db import utils
 
 class AptParser:
 

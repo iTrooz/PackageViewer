@@ -1,7 +1,7 @@
 import sqlite3
 
-from packageviewer.sql_table import SQLTable
-from packageviewer.inserters.inserter import Inserter
+from packageviewer.db.sql_table import SQLTable
+from packageviewer.db.inserters.inserter import Inserter
 import timer
 
 class AptInserter(Inserter):

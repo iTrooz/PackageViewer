@@ -3,7 +3,7 @@ import argparse
 import os
 import sys
 
-from packageviewer.data_manager import DataManager
+from packageviewer.db.data_manager import DataManager
 import timer
 
 
