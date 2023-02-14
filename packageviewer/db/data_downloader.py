@@ -2,6 +2,7 @@
 import os
 import itertools
 import asyncio
+import xml.etree.ElementTree as ET
 
 import yaml
 import aiohttp
@@ -68,7 +69,45 @@ class DataDownloader:
                 archive.process_archive_url()
                 yield archive
 
-    def _get_files(self, repos):
+    async def _get_files(self, repos):
+        results = self._get_async_requests(repos)
+        files = []
+        requests_futures = []
+        for result in results:
+            if type(result) == FileData:
+                files.append(result)
+            else:
+                requests_futures.append(result)
+
+        files.extend(
+            itertools.chain(*await asyncio.gather(*requests_futures))
+        )
+        return files
+        
+    async def _get_async_requests_dnf(self, base_uri, repo):
+        session = aiohttp.ClientSession()
+
+        url = os.path.join(repo.archive_url, 'repodata/repomd.xml')
+        ret = await self._download(session, url)
+        await session.close()
+        
+        root = ET.fromstring(await ret.text())
+
+        L = []
+
+        for data_node in root.findall("{*}data"):
+            data_type = data_node.get("type")
+            if data_type in ("primary_db", "filelists_db"):
+                location_node = data_node.find("{*}location")
+                href = location_node.get("href")
+                L.append(FileData(
+                    repo,
+                    url=os.path.join(repo.archive_url, href),
+                    file=os.path.join(base_uri, f'{data_type}.sqlite')
+                ))
+        return L
+
+    def _get_async_requests(self, repos):
         for repo in repos:
 
             base_uri = os.path.join('archives',
@@ -92,11 +131,8 @@ class DataDownloader:
                         )
 
                 case "dnf":
-                    yield FileData(
-                        repo,
-                        os.path.join(repo.archive_url, 'repodata/repomd.xml'),
-                        os.path.join(base_uri, 'repomd.xml')
-                    )
+                    yield self._get_async_requests_dnf(base_uri, repo)
+
                 case "pacman":
                     yield FileData(
                         repo,
@@ -131,20 +167,26 @@ class DataDownloader:
         self.total_download_size = total
         
         return total
-        
-    async def _download_single_file(self, bar, session, url, file):
-        MAX_CHUNK_SIZE = 2**16
+
+    @staticmethod
+    async def _download_and_save(session, url, bar, file):
+        resp = await DataDownloader._download(session, url)
+        await DataDownloader._save(bar, resp, file)
+
+
+    @staticmethod
+    async def _download(session, url):
 
         resp = await session.get(url)
-
         if not resp.ok:
             print(f"Warning: request {resp.url} returned HTTP code {resp.status}")
             return
-        
-        # if not set, try to calculate it ourselves, but it won't be directly accurate, see warning message
-        if not self.total_download_size:
-            size = int(resp.headers["Content-Length"])
-            bar.total += size
+
+        return resp
+
+    @staticmethod
+    async def _save(bar, resp, file):
+        MAX_CHUNK_SIZE = 2**16
 
         async with aiofiles.open(file, "+wb") as f:
             async for chunk in resp.content.iter_chunked(MAX_CHUNK_SIZE):
@@ -171,7 +213,7 @@ class DataDownloader:
                     if not self.force and ask(f"Something exists at location {filedata.file}. Do you want to overwrite it ?", 'n') == 'y':
                         print(f"Skipping {filedata.file}")
                         continue
-                tasks.append(self._download_single_file(bar=bar, session=session, url=filedata.url, file=filedata.file))
+                tasks.append(self._download_and_save(bar=bar, session=session, url=filedata.url, file=filedata.file))
 
             await asyncio.gather(*tasks)
 
@@ -187,9 +229,9 @@ class DataDownloader:
         self.files = list(filter(__filter_file, self.files))
         
 
-    def init(self):
+    async def init_files(self):
         repos = itertools.chain(*self._get_repos())
-        self.files = list(self._get_files(repos))
+        self.files = list(await self._get_files(repos))
 
         
     def _get_repos(self):

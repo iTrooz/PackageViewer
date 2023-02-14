@@ -49,7 +49,9 @@ class DataDownloaderCli:
             os.makedirs(self.args.output_dir)
         
         self.dd = DataDownloader(self.args.config, self.args.output_dir, self.args.force)
-        self.dd.init()
+
+        print("Querying files to download..")
+        await self.dd.init_files()
 
         if self.args.filter:
             print(f"Applying filter {self.args.filter}")
