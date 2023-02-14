@@ -67,8 +67,6 @@ class PacmanParser:
     def _parse_file_(self, filepath, repo):
         print("parse sums file "+filepath)
 
-        expected_file = 0
-        
         tmpdir_obj = tempfile.TemporaryDirectory()
         tmpdir = tmpdir_obj.name
 
