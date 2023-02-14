@@ -1,5 +1,9 @@
 import os
 import sqlite3
+import tempfile
+import bz2
+import lzma
+import glob
 
 from packageviewer.db import utils
 
@@ -11,9 +15,24 @@ class DnfParser:
         self.dir_path = dir_path
 
 
+    def decompress(self, filepath):
+        _, ext = os.path.splitext(filepath)
+        tmp_file_obj = tempfile.NamedTemporaryFile(suffix=".sqlite")
+        match ext:
+            case ".xz":
+                with lzma.open(filepath) as in_f, open(tmp_file_obj.name, "wb") as out_f:
+                    out_f.write(in_f.read())
+            case ".bz2":
+                with bz2.open(filepath) as in_f, open(tmp_file_obj.name, "wb") as out_f:
+                    out_f.write(in_f.read())
+            case _:
+                raise ValueError(f"Invalid extension: {ext}")
+
+        return tmp_file_obj
+
     def _parse_sum_file_(self, filepath, repo):
-        print(filepath)
-        conn = sqlite3.connect(filepath)
+        tmp_file = self.decompress(filepath)
+        conn = sqlite3.connect(tmp_file.name)
 
         cursor = conn.execute("SELECT pkgId, name, version, release, epoch FROM packages")
 
@@ -24,7 +43,8 @@ class DnfParser:
 
 
     def _parse_files_file_(self, filepath, repo):
-        conn = sqlite3.connect(filepath)
+        tmp_file = self.decompress(filepath)
+        conn = sqlite3.connect(tmp_file.name)
 
         cursor = conn.execute('''
             SELECT pkgId, dirname, filenames, filetypes FROM filelist
@@ -48,7 +68,8 @@ class DnfParser:
 
 
     def _parse_deps_(self, filepath, repo):
-        conn = sqlite3.connect(filepath)
+        tmp_file = self.decompress(filepath)
+        conn = sqlite3.connect(tmp_file.name)
 
         cursor = conn.execute('''
             SELECT packages.name, requires.name FROM requires
@@ -57,15 +78,27 @@ class DnfParser:
         for row in cursor.fetchall():
             yield {"parent_name": row[0], "dep_name": row[1]}
 
+    
+    def __join_file(self, full_repo, glob_):
+        path = os.path.join(full_repo, glob_)
+        glob_results = glob.glob(path)
+        if len(glob_results) != 1:
+            raise ValueError(f"Invalid glob results for {path}: {glob_results}")
+        else:
+            return glob_results[0]
+
 
     def parse_sums(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
-            yield self._parse_sum_file_(os.path.join(full_repo, "primary.sqlite"), repo)
+            path = self.__join_file(full_repo, "primary_db.sqlite*")
+            yield self._parse_sum_file_(path, repo)
 
     def parse_files(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
-            yield self._parse_files_file_(os.path.join(full_repo, "filelists.sqlite"), repo)
+            path = self.__join_file(full_repo, "filelists_db.sqlite*")
+            yield self._parse_files_file_(path, repo)
 
     def parse_deps(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
-            yield self._parse_deps_(os.path.join(full_repo, "primary.sqlite"), repo)
+            path = self.__join_file(full_repo, "primary_db.sqlite*")
+            yield self._parse_deps_(path, repo)
