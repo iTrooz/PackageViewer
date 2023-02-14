@@ -52,16 +52,20 @@ class PacmanParser:
         return sum, deps
 
     def _parse_files_file_(self, file, package_name):
-        line = next(file).strip()
-        if line != "%FILES%":
-            raise ValueError(f"Expected %FILES%, got {line}")
-
+        key = None
         for line in file:
-            filepath = line.strip()
-            dirname = os.path.dirname(filepath)
-            filename = os.path.basename(filepath)
-            if filename:
-                yield {"package": package_name, "dirname": dirname, "filename": filename}
+            line = line.strip()
+
+            if len(line) == 0:
+                key = None
+            elif line[0] == "%" and line[-1] == "%":
+                key = line[1:-1].upper()
+            else:
+                if key == "FILES":
+                    dirname = os.path.dirname(line)
+                    filename = os.path.basename(line)
+                    if filename:
+                        yield {"package": package_name, "dirname": dirname, "filename": filename}
 
 
     def _parse_file_(self, filepath, repo):
