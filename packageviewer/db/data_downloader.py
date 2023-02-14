@@ -167,7 +167,7 @@ class DataDownloader:
             tasks = []
             for filedata in self.files:
                 if os.path.exists(filedata.file):
-                    if self.force or ask(f"Something exists at location {filedata.file}. Do you want to overwrite it ?", 'n') == 'n':
+                    if not self.force and ask(f"Something exists at location {filedata.file}. Do you want to overwrite it ?", 'n') == 'y':
                         print(f"Skipping {filedata.file}")
                         continue
                 tasks.append(self._download_single_file(bar=bar, session=session, url=filedata.url, file=filedata.file))
