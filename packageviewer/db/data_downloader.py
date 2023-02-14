@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import yaml
 import os
 import itertools
 import asyncio
+
+import yaml
 import aiohttp
 import aiofiles
 import tqdm
