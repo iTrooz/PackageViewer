@@ -139,7 +139,7 @@ class DataDownloader:
                     yield FileData(
                         repo,
                         os.path.join(repo.archive_url, f'{repo.md["repo"]}.files'),
-                        os.path.join(base_uri, f'{repo.md["repo"]}.files')
+                        os.path.join(base_uri, f'{repo.md["repo"]}.files.tar.gz')
                     )
 
     async def query_download_size(self):
