@@ -100,10 +100,12 @@ class DataDownloader:
             if data_type in ("primary_db", "filelists_db"):
                 location_node = data_node.find("{*}location")
                 href = location_node.get("href")
+                ext = href[href.index(".")+1:]
+
                 L.append(FileData(
                     repo,
                     url=os.path.join(repo.archive_url, href),
-                    file=os.path.join(base_uri, f'{data_type}.sqlite')
+                    file=os.path.join(base_uri, f'{data_type}.{ext}')
                 ))
         return L
 
