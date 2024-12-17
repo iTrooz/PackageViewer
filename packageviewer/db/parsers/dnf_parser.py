@@ -1,3 +1,4 @@
+import gzip
 import os
 import sqlite3
 import tempfile
@@ -24,6 +25,9 @@ class DnfParser:
                     out_f.write(in_f.read())
             case ".bz2":
                 with bz2.open(filepath) as in_f, open(tmp_file_obj.name, "wb") as out_f:
+                    out_f.write(in_f.read())
+            case ".gz":
+                with gzip.open(filepath) as in_f, open(tmp_file_obj.name, "wb") as out_f:
                     out_f.write(in_f.read())
             case _:
                 raise ValueError(f"Invalid extension: {ext}")
