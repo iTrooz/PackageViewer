@@ -1,6 +1,0 @@
-pydpkg
-rpm_vercmp
-PyYAML
-aiohttp
-aiofiles
-tqdm

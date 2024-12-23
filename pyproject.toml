@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "packageviewer"
+version = "0.1.0"
+description = ""
+authors = ["iTrooz <hey@itrooz.fr>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pydpkg = "^1.9.3"
+rpm-vercmp = "^0.1.2"
+pyyaml = "^6.0.2"
+aiohttp = "^3.11.11"
+aiofiles = "^24.1.0"
+tqdm = "^4.67.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
