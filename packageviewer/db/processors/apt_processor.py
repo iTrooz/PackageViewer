@@ -60,7 +60,7 @@ class AptProcessor:
                 ):
                     current_sum = loop_sum
             else:
-                if current_sum["name"] != None:
+                if current_sum["name"] is not None:
                     dedup_sums_data.append(current_sum)
                 current_sum = loop_sum
         sums_data = dedup_sums_data

@@ -23,7 +23,7 @@ class RepoData:
 
     def process_archive_url(self):
         for key, value in self.md.items():
-            if type(value) == str:
+            if type(value) is str:
                 self.archive_url = self.archive_url.replace("$" + key, value)
 
         if "$" in self.archive_url:
@@ -83,7 +83,7 @@ class DataDownloader:
         files = []
         requests_futures = []
         for result in results:
-            if type(result) == FileData:
+            if type(result) is FileData:
                 files.append(result)
             else:
                 requests_futures.append(result)

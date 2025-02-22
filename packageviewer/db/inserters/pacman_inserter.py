@@ -1,4 +1,3 @@
-
 from packageviewer.db.sql_table import SQLTable
 from packageviewer.db.inserters.inserter import Inserter
 

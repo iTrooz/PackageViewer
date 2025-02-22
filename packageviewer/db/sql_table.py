@@ -21,7 +21,7 @@ class SQLTable:
         iterator = iter(rows)
         first_row = next(iterator, None)
 
-        if first_row == None:  # empty iterator
+        if first_row is None:  # empty iterator
             return
 
         sql = self._get_sql_query_(first_row.keys())

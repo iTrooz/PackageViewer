@@ -34,7 +34,7 @@ class DnfProcessor:
                 if rpm_vercmp.vercmp(loop_sum["version"], current_sum["version"]) == 1:
                     current_sum = loop_sum
             else:
-                if current_sum["name"] != None:
+                if current_sum["name"] is not None:
                     del current_sum["release"]
                     del current_sum["epoch"]
 

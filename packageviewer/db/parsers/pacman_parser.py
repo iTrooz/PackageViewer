@@ -29,22 +29,22 @@ class PacmanParser:
             line = line.strip()
             if len(line) == 0:
                 if key == "DEPENDS":
-                    deps = value if type(value) == list else (value,)
+                    deps = value if type(value) is list else (value,)
                 else:
                     key = self._translate_sum_key_(key)
-                    if key != None:
+                    if key is not None:
                         sum[key] = value
                 key = None
                 value = None
-            elif key == None:
+            elif key is None:
                 if line[0] == "%" and line[-1] == "%":
                     key = line[1:-1].upper()
                 else:
                     raise ValueError(f"Expected %key%, got {line}")
             else:
-                if value == None:
+                if value is None:
                     value = line
-                elif type(value) == list:
+                elif type(value) is list:
                     value.append(line)
                 else:
                     value = [value, line]

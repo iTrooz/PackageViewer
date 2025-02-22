@@ -21,7 +21,7 @@ tasks = []
 
 
 def start(name=None):
-    task_name = "anonymous task" if name == None else "task " + name
+    task_name = "anonymous task" if name is None else "task " + name
     print(f"{task_name} started !")
 
     task = [name, None]
@@ -34,12 +34,12 @@ def stop(name=None):
 
     task = tasks.pop()
 
-    if name != None:  # name verification
+    if name is not None:  # name verification
         if task[0] != name:
             raise ValueError(
                 f"Invalid name for task : started with '{task[0]}' but stopped with '{name}'"
             )
 
-    task_name = "anonymous task" if task[0] == None else "task " + task[0]
+    task_name = "anonymous task" if task[0] is None else "task " + task[0]
 
     print(f"{task_name} finished ! ({(end-task[1]):.4f}s)")
