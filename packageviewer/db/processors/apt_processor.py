@@ -1,8 +1,8 @@
-from pydpkg import Dpkg
-
 from packageviewer.db.parsers.apt_parser import AptParser
 from packageviewer.db.inserters.apt_inserter import AptInserter
 import timer
+
+from debian import debian_support 
 
 def __first_group__(data, sep):
     index = data.find(sep)
@@ -50,7 +50,8 @@ class AptProcessor:
         sums_data.append({"name": None})
         for loop_sum in sums_data:
             if loop_sum["name"] == current_sum["name"]:
-                if Dpkg.compare_versions(loop_sum["version"], current_sum["version"]) == 1:
+                # Check if a > b
+                if debian_support.version_compare(loop_sum["version"], current_sum["version"]) == 1:
                     current_sum = loop_sum
             else:
                 if current_sum["name"] != None:
