@@ -18,4 +18,5 @@ jobs:
 
     - name: Run linting
       run: |
+        pipx install pre-commit
         pre-commit run --all-files
