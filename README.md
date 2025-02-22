@@ -1,6 +1,6 @@
 # PackageViewer database
 
-This repository contains scripts to create and manage a SQLite database of package metadata across Linux ditributions.
+This repository contains scripts to create and manage a SQLite database of package metadata across Linux distributions.
 
 # What is this ?
 
@@ -22,7 +22,7 @@ The archive formats currently supported are the ones used by apt, dnf and pacman
 - "What are the files provided by this package ?"
 - "On which distributions does this package exist ? Where is it the most recent ?"
 - "What is the dependency graph of this package ?"
-- Helps to match packages functionnalities match across distributions when they are not 1:1 ?
+- Helps to match packages functionalities match across distributions when they are not 1:1 ?
 
 # Licence
 The licence **for the scripts** is GPL-2-or-later
