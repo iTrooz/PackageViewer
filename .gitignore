@@ -4,3 +4,4 @@ local/
 **/*.db
 **/*.db-journal
 test.py
+config.yml
