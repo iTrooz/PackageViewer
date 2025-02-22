@@ -1,15 +1,16 @@
-import sqlite3
 
 import timer
 
+
 class Inserter:
-    
+
     def __init__(self, conn) -> None:
         self.conn = conn
-        
+
     @timer.dec
     def create_tables(self):
-        self.conn.executescript('''
+        self.conn.executescript(
+            """
         CREATE TABLE IF NOT EXISTS distro(
             distro_id INTEGER PRIMARY KEY,
             name TEXT,
@@ -42,41 +43,54 @@ class Inserter:
             filename_id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT
         );
-        ''')
-    
+        """
+        )
+
     @timer.dec
     def insert_distro(self, distro_name, distro_version):
-        cursor = self.conn.execute('''
+        cursor = self.conn.execute(
+            """
             INSERT INTO distro (name, version) VALUES (?, ?)
-        ''', (distro_name, distro_version))
+        """,
+            (distro_name, distro_version),
+        )
         self.cache_distro_id = cursor.lastrowid
 
     @timer.dec
     def insert_repo_table(self):
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO repo(distro_id, name)
             SELECT DISTINCT ?, tmp_package.repo FROM tmp_package
-        ''', (self.cache_distro_id,))
+        """,
+            (self.cache_distro_id,),
+        )
 
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO tmp_repo(repo_id, name)
             SELECT DISTINCT repo.repo_id, repo.name FROM repo
             JOIN distro ON distro.distro_id = repo.distro_id
             WHERE distro.distro_id = ?
-        ''', (self.cache_distro_id,))
+        """,
+            (self.cache_distro_id,),
+        )
 
     @timer.dec
     def insert_package_table(self):
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO package (name, repo_id)
             SELECT tmp_package.name, tmp_repo.repo_id FROM tmp_package
             JOIN tmp_repo
             ON tmp_repo.name = repo
-        ''')
+        """
+        )
 
     @timer.dec
     def insert_pkgdep_table(self):
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO pkgdep (parent_pkg_id, dep_pkg_id)
             SELECT parent_pkg.package_id, dep_pkg.package_id FROM tmp_dep
             -- join package
@@ -85,29 +99,35 @@ class Inserter:
             -- filter to keep our packages only
             JOIN tmp_repo tmp_repo_a ON tmp_repo_a.repo_id = parent_pkg.repo_id
             JOIN tmp_repo tmp_repo_b ON tmp_repo_b.repo_id = dep_pkg.repo_id
-        ''')
+        """
+        )
 
     @timer.dec
     def insert_dirname_table(self):
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO dirname (dirname)
             SELECT DISTINCT tmp_file.dirname FROM tmp_file
             LEFT JOIN dirname ON dirname.dirname = tmp_file.dirname
             WHERE dirname.dirname_id is null
-        ''')
+        """
+        )
 
     @timer.dec
     def insert_filename_table(self):
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO filename (filename)
             SELECT DISTINCT tmp_file.filename FROM tmp_file
             LEFT JOIN filename ON filename.filename = tmp_file.filename
             WHERE filename.filename_id is null
-        ''')
+        """
+        )
 
     @timer.dec
     def insert_file_table(self):
-        self.conn.execute('''
+        self.conn.execute(
+            """
             INSERT INTO file (package_id, dirname_id, filename_id)
             SELECT package_id, dirname_id, filename_id FROM tmp_file
             -- join package
@@ -118,7 +138,8 @@ class Inserter:
             JOIN dirname ON dirname.dirname = tmp_file.dirname
             -- join filename
             JOIN filename ON filename.filename = tmp_file.filename
-        ''')
+        """
+        )
 
     @timer.dec
     def commit(self):

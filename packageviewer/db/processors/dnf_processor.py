@@ -6,6 +6,7 @@ from packageviewer.db.parsers.dnf_parser import DnfParser
 from packageviewer.db.inserters.dnf_inserter import DnfInserter
 import timer
 
+
 class DnfProcessor:
 
     def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
@@ -13,7 +14,6 @@ class DnfProcessor:
         self.distro_version = distro_version
         self.parser = DnfParser(distro_name, distro_version, dir_path)
         self.inserter = DnfInserter(conn)
-
 
     @timer.dec
     def process_sums(self):
@@ -37,7 +37,7 @@ class DnfProcessor:
                 if current_sum["name"] != None:
                     del current_sum["release"]
                     del current_sum["epoch"]
-                    
+
                     dedup_sums_data.append(current_sum)
 
                 current_sum = loop_sum
@@ -49,7 +49,7 @@ class DnfProcessor:
     def process_deps(self):
         deps = itertools.chain(*self.parser.parse_deps())
         self.inserter.table_tmp_dep.add_rows(deps)
-    
+
     @timer.dec
     def process_files(self):
         files_list = self.parser.parse_files()

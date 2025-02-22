@@ -1,6 +1,7 @@
 import flask
 
-bp = flask.Blueprint('api', __name__, url_prefix="/api/v1/")
+bp = flask.Blueprint("api", __name__, url_prefix="/api/v1/")
+
 
 @bp.route("/getPackageInfo", methods=["GET", "POST"])
 def index():

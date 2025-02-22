@@ -2,11 +2,13 @@ from packageviewer.db.parsers.apt_parser import AptParser
 from packageviewer.db.inserters.apt_inserter import AptInserter
 import timer
 
-from debian import debian_support 
+from debian import debian_support
+
 
 def __first_group__(data, sep):
     index = data.find(sep)
     return data if index == -1 else data[:index]
+
 
 class AptProcessor:
 
@@ -15,7 +17,6 @@ class AptProcessor:
         self.distro_version = distro_version
         self.parser = AptParser(distro_name, distro_version, dir_path)
         self.inserter = AptInserter(conn)
-
 
     @timer.dec
     def process(self):
@@ -26,11 +27,11 @@ class AptProcessor:
     def gen_deps_rows(self, pkg_name, deps):
         separated_deps = set()
         for dep_group in deps.split(","):
-            dep_name = __first_group__(dep_group, '|')
-            dep_name = __first_group__(dep_name, '(')
+            dep_name = __first_group__(dep_group, "|")
+            dep_name = __first_group__(dep_name, "(")
 
-            separated_deps.add(dep_name.strip()) # set so auto-dedup
-        
+            separated_deps.add(dep_name.strip())  # set so auto-dedup
+
         for dep_name in separated_deps:
             yield {"parent_name": pkg_name, "dep_name": dep_name}
 
@@ -51,7 +52,12 @@ class AptProcessor:
         for loop_sum in sums_data:
             if loop_sum["name"] == current_sum["name"]:
                 # Check if a > b
-                if debian_support.version_compare(loop_sum["version"], current_sum["version"]) == 1:
+                if (
+                    debian_support.version_compare(
+                        loop_sum["version"], current_sum["version"]
+                    )
+                    == 1
+                ):
                     current_sum = loop_sum
             else:
                 if current_sum["name"] != None:
@@ -65,10 +71,8 @@ class AptProcessor:
                 deps_rows = list(self.gen_deps_rows(row["name"], deps))
                 self.inserter.table_tmp_dep.add_rows(deps_rows)
                 del row["depends"]
-                
+
             self.inserter.table_tmp_package.add_row(row)
-
-
 
     @timer.dec
     def process_files(self):

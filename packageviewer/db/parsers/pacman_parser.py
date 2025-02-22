@@ -3,12 +3,12 @@ import tarfile
 import tempfile
 import itertools
 
-from tqdm import tqdm
 
 from packageviewer.db import utils
 
+
 class PacmanParser:
-    
+
     def __init__(self, distro_name: str, distro_version: str, dir_path: str) -> None:
         self.distro_name = distro_name
         self.distro_version = distro_version
@@ -20,13 +20,12 @@ class PacmanParser:
         else:
             return None
 
-
     def _parse_desc_file_(self, file, repo):
         sum = {"repo": repo}
         deps = []
         key = None
         value = None
-        for line in itertools.chain(file, [""]): # needed to flush last key/value pair
+        for line in itertools.chain(file, [""]):  # needed to flush last key/value pair
             line = line.strip()
             if len(line) == 0:
                 if key == "DEPENDS":
@@ -65,11 +64,14 @@ class PacmanParser:
                     dirname = os.path.dirname(line)
                     filename = os.path.basename(line)
                     if filename:
-                        yield {"package": package_name, "dirname": dirname, "filename": filename}
-
+                        yield {
+                            "package": package_name,
+                            "dirname": dirname,
+                            "filename": filename,
+                        }
 
     def _parse_file_(self, filepath, repo):
-        print("parse sums file "+filepath)
+        print("parse sums file " + filepath)
 
         tmpdir_obj = tempfile.TemporaryDirectory()
         tmpdir = tmpdir_obj.name
@@ -80,12 +82,14 @@ class PacmanParser:
 
             with open(os.path.join(fulldir, "desc"), "r") as f:
                 sum, deps = self._parse_desc_file_(f, repo)
-            
+
             with open(os.path.join(fulldir, "files"), "r") as f:
                 files = list(self._parse_files_file_(f, sum["name"]))
-                
+
             yield {"sum": sum, "files": files, "deps": deps}
 
     def parse(self):
         for repo, fullrepo in utils.loop_dirs(self.dir_path):
-            yield self._parse_file_(os.path.join(fullrepo, repo+".files.tar.gz"), repo)
+            yield self._parse_file_(
+                os.path.join(fullrepo, repo + ".files.tar.gz"), repo
+            )

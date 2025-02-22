@@ -15,28 +15,47 @@ class DataDownloaderCli:
 
     def run(self):
         parser = argparse.ArgumentParser(
-            prog = f"data_downloader_cli",
-            description = "Download data",
+            prog="data_downloader_cli",
+            description="Download data",
             epilog=f"script version {self.SCRIPT_VERSION}",
         )
 
-        parser.add_argument("--config", "-i", default="config.yml",
-            help = "Set database file to use")
+        parser.add_argument(
+            "--config", "-i", default="config.yml", help="Set database file to use"
+        )
 
-        parser.add_argument("--preview", "-p", default=False, action="store_true",
-            help = "Only preview download size and exit")
+        parser.add_argument(
+            "--preview",
+            "-p",
+            default=False,
+            action="store_true",
+            help="Only preview download size and exit",
+        )
 
-        parser.add_argument("--output_dir", "-o", default="archives",
-            help = "Set the distribution")
+        parser.add_argument(
+            "--output_dir", "-o", default="archives", help="Set the distribution"
+        )
 
-        parser.add_argument("--clear", default=False, action="store_true",
-            help = "Clear the output directory before downloading")
+        parser.add_argument(
+            "--clear",
+            default=False,
+            action="store_true",
+            help="Clear the output directory before downloading",
+        )
 
-        parser.add_argument("--filter", required=False,
-            help = "Filter to only download some files. Syntax: distro/version/content . e.g: ubuntu/22.04")
+        parser.add_argument(
+            "--filter",
+            required=False,
+            help="Filter to only download some files. Syntax: distro/version/content . e.g: ubuntu/22.04",
+        )
 
-        parser.add_argument("--force", "-f", default=False, action="store_true",
-            help = "Do not ask for confirmation to overwrite files")
+        parser.add_argument(
+            "--force",
+            "-f",
+            default=False,
+            action="store_true",
+            help="Do not ask for confirmation to overwrite files",
+        )
 
         self.args = parser.parse_args()
 
@@ -47,8 +66,10 @@ class DataDownloaderCli:
             print(f"Deleting directory {self.args.output_dir}..")
             shutil.rmtree(self.args.output_dir)
             os.makedirs(self.args.output_dir)
-        
-        self.dd = DataDownloader(self.args.config, self.args.output_dir, self.args.force)
+
+        self.dd = DataDownloader(
+            self.args.config, self.args.output_dir, self.args.force
+        )
 
         print("Querying files to download..")
         await self.dd.init_files()
@@ -71,14 +92,14 @@ class DataDownloaderCli:
 
         print("Querying download size..")
         mib_total = bytes_to_mib(await self.dd.query_download_size())
-        print(f'Total to download: {mib_total}MiB')
-        
-        if self.args.preview: # Only preview
+        print(f"Total to download: {mib_total}MiB")
+
+        if self.args.preview:  # Only preview
             return
 
-        if not self.args.force and ask("Do you want to continue ?", 'y') == 'n':
+        if not self.args.force and ask("Do you want to continue ?", "y") == "n":
             return
-        
+
         await self.dd.download_files()
         print("Download finished !")
 

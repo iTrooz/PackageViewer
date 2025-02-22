@@ -1,10 +1,10 @@
 import os
 import gzip
-from time import time
 
 from tqdm import tqdm
 
 from packageviewer.db import utils
+
 
 class AptParser:
 
@@ -12,12 +12,12 @@ class AptParser:
         self.distro_name = distro_name
         self.distro_version = distro_version
         self.dir_path = dir_path
-    
+
     def _parse_sum_file_(self, filepath, repo, area):
         def gen_row():
             return {
-                "distro_name":self.distro_name,
-                "distro_version":self.distro_version,
+                "distro_name": self.distro_name,
+                "distro_version": self.distro_version,
                 "repo": repo,
             }
 
@@ -36,8 +36,8 @@ class AptParser:
 
             index = line.find(":")
             key = line[:index]
-            value = line[index+2:]
-            
+            value = line[index + 2 :]
+
             match key:
                 case "Package":
                     row["name"] = value
@@ -54,7 +54,7 @@ class AptParser:
         if not os.path.exists(filepath):
             print(f"Warning: file {filepath} Doesn't exist. Skipping")
             return
-        
+
         file = gzip.open(filepath, "rb")
 
         for line in tqdm(file):
@@ -69,17 +69,28 @@ class AptParser:
 
             package_name = package_loc.split("/")[-1]
             filepath_split = filepath.split(" ")
-            dirname, filename = os.path.dirname(filepath), os.path.basename(filepath_split[-1])
+            dirname, filename = os.path.dirname(filepath), os.path.basename(
+                filepath_split[-1]
+            )
 
-            yield {"repo": repo, "package": package_name, "dirname": dirname, "filename": filename}
+            yield {
+                "repo": repo,
+                "package": package_name,
+                "dirname": dirname,
+                "filename": filename,
+            }
 
         file.close()
 
     def parse_sums(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
             for area, full_area in utils.loop_dirs(full_repo):
-                yield self._parse_sum_file_(os.path.join(full_area, "Packages.gz"), repo, area)
+                yield self._parse_sum_file_(
+                    os.path.join(full_area, "Packages.gz"), repo, area
+                )
 
     def parse_files(self):
         for repo, full_repo in utils.loop_dirs(self.dir_path):
-            yield self._parse_files_file_(os.path.join(full_repo, "Contents-amd64.gz"), repo)
+            yield self._parse_files_file_(
+                os.path.join(full_repo, "Contents-amd64.gz"), repo
+            )

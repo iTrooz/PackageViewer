@@ -1,4 +1,3 @@
-import os
 import sqlite3
 
 from packageviewer.db.processors.apt_processor import AptProcessor
@@ -12,25 +11,33 @@ class DataManager:
     def __init__(self, db_filepath):
         self.db_filepath = db_filepath
         self.conn = sqlite3.connect(db_filepath)
-        
+
     def __get_processor_class__(self, distro_name):
         match distro_name:
-            case "debian": return AptProcessor
-            case "ubuntu": return AptProcessor
-            case "fedora": return DnfProcessor
-            case "archlinux": return PacmanProcessor
-            case _: raise ValueError("Unknown distribution: "+distro_name)
+            case "debian":
+                return AptProcessor
+            case "ubuntu":
+                return AptProcessor
+            case "fedora":
+                return DnfProcessor
+            case "archlinux":
+                return PacmanProcessor
+            case _:
+                raise ValueError("Unknown distribution: " + distro_name)
 
     def process_data_point(self, distro_name, distro_version, dir_path):
         ProcessorClass = self.__get_processor_class__(distro_name)
-        print(f"Using processor class '{ProcessorClass.__name__}' for {distro_name}:{distro_version}")
-        
+        print(
+            f"Using processor class '{ProcessorClass.__name__}' for {distro_name}:{distro_version}"
+        )
+
         parser = ProcessorClass(distro_name, distro_version, dir_path, self.conn)
         parser.process()
 
     @timer.dec
     def create_tables(self):
-        self.conn.executescript('''
+        self.conn.executescript(
+            """
         CREATE TABLE IF NOT EXISTS distro(
             distro_id INTEGER PRIMARY KEY,
             name TEXT,
@@ -59,13 +66,24 @@ class DataManager:
             filename_id INTEGER PRIMARY KEY AUTOINCREMENT,
             filename TEXT
         );
-        ''')
+        """
+        )
 
     @timer.dec
     def add_indexes(self):
-        self.conn.execute('''CREATE INDEX "index-dirname-dirname" ON "dirname" ("dirname")''')
-        self.conn.execute('''CREATE INDEX "index-filename-filename" ON "filename" ("filename")''')
-        self.conn.execute('''CREATE INDEX "index-file-dirname_id" ON "file" ("dirname_id")''')
-        self.conn.execute('''CREATE INDEX "index-file-filename_id" ON "file" ("filename_id")''')
-        self.conn.execute('''CREATE INDEX "index-file-package_id" ON "file" ("package_id")''')
-        self.conn.execute('''CREATE INDEX "index-package-name" ON "package" ("name")''')
+        self.conn.execute(
+            """CREATE INDEX "index-dirname-dirname" ON "dirname" ("dirname")"""
+        )
+        self.conn.execute(
+            """CREATE INDEX "index-filename-filename" ON "filename" ("filename")"""
+        )
+        self.conn.execute(
+            """CREATE INDEX "index-file-dirname_id" ON "file" ("dirname_id")"""
+        )
+        self.conn.execute(
+            """CREATE INDEX "index-file-filename_id" ON "file" ("filename_id")"""
+        )
+        self.conn.execute(
+            """CREATE INDEX "index-file-package_id" ON "file" ("package_id")"""
+        )
+        self.conn.execute("""CREATE INDEX "index-package-name" ON "package" ("name")""")

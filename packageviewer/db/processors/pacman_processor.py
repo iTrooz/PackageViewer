@@ -2,6 +2,7 @@ from packageviewer.db.parsers.pacman_parser import PacmanParser
 from packageviewer.db.inserters.pacman_inserter import PacmanInserter
 import timer
 
+
 class PacmanProcessor:
 
     def __init__(self, distro_name, distro_version, dir_path, conn) -> None:
@@ -35,7 +36,10 @@ class PacmanProcessor:
                 sum = j["sum"]
                 sums_data.append(sum)
                 self.inserter.table_tmp_file.add_rows(j["files"])
-                for row in ({"parent_name": sum["name"], "dep_name": dep_name} for dep_name in j["deps"]):
+                for row in (
+                    {"parent_name": sum["name"], "dep_name": dep_name}
+                    for dep_name in j["deps"]
+                ):
                     self.inserter.table_tmp_dep.add_row(row)
                     # if not self._is_filedep_(row["dep_name"]):
 
